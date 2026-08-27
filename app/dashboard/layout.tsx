@@ -24,8 +24,14 @@ export default function DashboardLayout({
           <Link href="/dashboard/analytics" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors">
             Analytics
           </Link>
+          <Link href="/dashboard/feedback" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors">
+            Feedback
+          </Link>
           <Link href="/dashboard/settings" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors">
             Settings
+          </Link>
+          <Link href="/dashboard/qr-code" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors">
+            QR Code
           </Link>
         </nav>
         
