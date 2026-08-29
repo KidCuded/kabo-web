@@ -1,11 +1,12 @@
 // app/dashboard/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect} from 'react'
 import { createClient } from '@/utils/supabase/client'
 
 export default function DashboardPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
+  const [businessId, setBusinessId] = useState<string | null>(null)
   const [searchState, setSearchState] = useState<'IDLE' | 'LOADING' | 'FOUND' | 'NOT_FOUND' | 'REGISTERING'>('IDLE')
   
   const [customer, setCustomer] = useState<{ id: string; name: string; stamps: number; phone: string } | null>(null)
@@ -18,22 +19,51 @@ export default function DashboardPage() {
 
   const supabase = createClient()
 
+  // Fetch the business ID for the logged-in user
+  useEffect(() => {
+    async function fetchBusiness() {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) return
+
+      const { data: businessData } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('auth_user_id', userData.user.id)
+        .single()
+
+      if (businessData) {
+        setBusinessId(businessData.id)
+      }
+    }
+    fetchBusiness()
+  }, [])
+
   // 1. Search Logic
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!phoneNumber.trim()) return
+    if (!phoneNumber.trim() || !businessId) return
     
     setSearchState('LOADING')
     setCustomer(null)
     setErrorMsg('')
 
+    // THE FIX: Use !inner to strictly mandate that the customer must be 
+    // registered to THIS specific business_id to show up in the search.
     const { data, error } = await supabase
       .from('customers')
-      .select(`id, name, phone_number, loyalty_balances ( current_stamps )`)
+      .select(`
+        id, 
+        name, 
+        phone_number, 
+        loyalty_balances!inner ( current_stamps )
+      `)
       .eq('phone_number', phoneNumber)
+      .eq('loyalty_balances.business_id', businessId) // Block cross-store data!
       .single()
 
     if (error || !data) {
+      // Now, if they are registered at Store A, but Store B searches for them,
+      // it will correctly fail and trigger the NOT_FOUND state so Store B can register them.
       setSearchState('NOT_FOUND')
       return
     }

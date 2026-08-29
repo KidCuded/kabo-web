@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-black flex flex-col font-sans">
       
       {/* Navigation Bar */}
       <header className="bg-white border-b border-gray-200">
@@ -28,13 +28,13 @@ export default function LandingPage() {
       {/* Hero Section */}
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 text-center">
-          <h1 className="text-5xl md:text-7xl font-black text-gray-900 tracking-tight mb-6">
+          <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight mb-6">
             Ditch the paper <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
               punch cards.
             </span>
           </h1>
-          <p className="mt-4 text-xl text-gray-500 max-w-2xl mx-auto font-medium mb-10">
+          <p className="mt-4 text-xl text-gray-200 max-w-2xl mx-auto font-medium mb-10">
             A lightning-fast, digital loyalty system for modern businesses. Reward your customers, track your growth, and keep them coming back—no app download required.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
