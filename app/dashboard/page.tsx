@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client'
 
 export default function DashboardPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
+  const [searchedPhone, setSearchedPhone] = useState('')
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [searchState, setSearchState] = useState<'IDLE' | 'LOADING' | 'FOUND' | 'NOT_FOUND' | 'REGISTERING'>('IDLE')
   
@@ -46,6 +47,7 @@ export default function DashboardPage() {
     setSearchState('LOADING')
     setCustomer(null)
     setErrorMsg('')
+    setSearchedPhone(phoneNumber)
 
     // THE FIX: Use !inner to strictly mandate that the customer must be 
     // registered to THIS specific business_id to show up in the search.
@@ -298,7 +300,12 @@ export default function DashboardPage() {
               placeholder="Enter customer phone number (e.g., 0123456789)"
               className="flex-1 rounded-lg border border-gray-300 px-5 py-4 text-lg text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={(e) => {
+                setPhoneNumber(e.target.value)
+                if (searchState === 'NOT_FOUND') {
+                  setSearchState('IDLE') // Dismisses the stale error card as soon as they start editing
+                }
+              }}
             />
             <button
               type="submit"
@@ -346,7 +353,7 @@ export default function DashboardPage() {
         {searchState === 'NOT_FOUND' && (
           <div className="bg-white rounded-xl shadow-sm border border-dashed border-gray-300 p-8 text-center">
             <h3 className="text-xl font-bold text-gray-900 mb-2">Customer Not Found</h3>
-            <p className="text-gray-500 mb-8">No profile exists for {phoneNumber}. Would you like to register them?</p>
+            <p className="text-gray-500 mb-8">No profile exists for <span className="font-semibold text-gray-800">{searchedPhone}</span>. Would you like to register them?</p>
             <button 
               onClick={() => setSearchState('REGISTERING')}
               className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"

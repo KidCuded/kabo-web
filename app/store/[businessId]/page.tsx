@@ -71,40 +71,34 @@ export default function CustomerCheckPage() {
 
     setSearchState('LOADING')
 
-    // 1. Find the customer's profile
-    const { data: customerData, error: customerError } = await supabase
+    // Inner join customers and loyalty_balances for THIS specific business
+    const { data, error } = await supabase
       .from('customers')
-      .select('id, name')
+      .select(`
+        id, 
+        name, 
+        loyalty_balances!inner ( current_stamps )
+      `)
       .eq('phone_number', phoneNumber)
-      .single()
+      .eq('loyalty_balances.business_id', businessId)
+      .maybeSingle() // <--- Use maybeSingle() instead of single() to prevent crashes on duplicates
 
-    if (customerError || !customerData) {
+    if (error || !data) {
       setSearchState('NOT_FOUND')
       return
     }
 
-    // 2. Verify they actually have a relationship with the specific store
-    const { data: balanceData, error: balanceError } = await supabase
-      .from('loyalty_balances')
-      .select('current_stamps')
-      .eq('customer_id', customerData.id)
-      .eq('business_id', businessId)
-      .single()
-
-    // If they don't have a balance record for this specific business, reject them.
-    if (balanceError || !balanceData) {
-      setSearchState('NOT_FOUND')
-      return
-    }
+    const balances = Array.isArray(data.loyalty_balances) 
+      ? data.loyalty_balances[0] 
+      : data.loyalty_balances
 
     setCustomer({
-      name: customerData.name || 'Valued Customer',
-      stamps: balanceData.current_stamps
+      name: data.name || 'Valued Customer',
+      stamps: balances?.current_stamps || 0
     })
 
     setSearchState('FOUND')
   }
-
   const resetSearch = () => {
     setSearchState('IDLE')
     setPhoneNumber('')
