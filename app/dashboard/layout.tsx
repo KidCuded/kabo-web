@@ -81,6 +81,9 @@ export default async function DashboardLayout({
           <Link href="/dashboard/qr-code" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors">
             QR Code
           </Link>
+          <Link href="/dashboard/subscription" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors">
+            Subscription
+          </Link>
         </nav>
         
         <div className="p-4 border-t border-gray-200">

@@ -145,7 +145,7 @@ export default function SettingsPage() {
               
               {/* --- STORE PROFILE SECTION --- */}
               <section>
-                <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2">
+                <h2 className="text-2xl font-extrabold text-gray-900 mb-4 pb-2">
                   {storeName}
                 </h2>
                 <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">
