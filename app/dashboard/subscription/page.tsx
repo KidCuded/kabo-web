@@ -42,18 +42,37 @@ export default function SubscriptionPage() {
   const handleCurlecCheckout = async () => {
     setIsLoading(true)
     
-    // This is where we will call our Next.js API route to generate the Curlec URL
-    console.log('Initiating Curlec FPX Mandate...')
-    
-    // Simulate API delay for now
-    setTimeout(() => {
-      alert('This will redirect to the Curlec secure payment page!')
-      setIsLoading(false)
-    }, 1000)
-  }
+    try {
+      // 1. Call your secure API route
+      const response = await fetch('/api/curlec/checkout', {
+        method: 'POST',
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) throw new Error(data.error)
 
-  if (status === 'loading') {
-    return <div className="animate-pulse text-gray-500">Loading billing details...</div>
+      // 2. Build the Curlec Checkout URL
+      // (Replace this base URL with Curlec's actual testing/production endpoint)
+      const curlecEndpoint = 'https://demo.curlec.com/checkout'
+      
+      const params = new URLSearchParams({
+        merchantId: data.payload.merchantId,
+        reference: data.payload.reference,
+        amount: data.payload.amount,
+        customerName: data.payload.customerName,
+        signature: data.payload.signature,
+        returnUrl: data.payload.returnUrl
+      })
+
+      // 3. Redirect the merchant to the payment gateway
+      window.location.href = `${curlecEndpoint}?${params.toString()}`
+
+    } catch (error) {
+      console.error('Checkout failed:', error)
+      alert('Failed to initiate checkout. Please try again.')
+      setIsLoading(false)
+    }
   }
 
   return (
