@@ -46,7 +46,7 @@ export default async function LoginPage(props: {
               <label className="block text-sm font-medium text-gray-700" htmlFor="password">
                 Password
               </label>
-              <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+              <a href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500">
                 Forgot password?
               </a>
             </div>
