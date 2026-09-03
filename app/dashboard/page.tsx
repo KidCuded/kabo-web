@@ -1,24 +1,24 @@
 // app/dashboard/page.tsx
 'use client'
 
-import { useState, useEffect} from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 
 export default function DashboardPage() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('')
   const [searchedPhone, setSearchedPhone] = useState('')
   const [businessId, setBusinessId] = useState<string | null>(null)
-  const [stampThreshold, setStampThreshold] = useState<number>(10) // New state, defaults to 10
+  const [stampThreshold, setStampThreshold] = useState<number>(10)
   const [searchState, setSearchState] = useState<'IDLE' | 'LOADING' | 'FOUND' | 'NOT_FOUND' | 'REGISTERING'>('IDLE')
   
   const [customer, setCustomer] = useState<{ id: string; name: string; stamps: number; phone: string } | null>(null)
+  const [stampsToAdd, setStampsToAdd] = useState<number>(1) // Controls the dynamic stamp counter
   
   // Registration & Toast State
   const [newCustomerName, setNewCustomerName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  const [toastMessage, setToastMessage] = useState('') // New state for success pop-ups
+  const [toastMessage, setToastMessage] = useState('')
 
   const supabase = createClient()
 
@@ -37,7 +37,6 @@ export default function DashboardPage() {
       if (businessData) {
         setBusinessId(businessData.id)
         
-        // Fetch the merchant's specific stamp threshold
         const { data: ruleData } = await supabase
           .from('loyalty_rules')
           .select('stamp_threshold')
@@ -52,15 +51,6 @@ export default function DashboardPage() {
     fetchBusiness()
   }, [])
 
-  useEffect(() => {
-  const handleScroll = () => {
-    setIsScrolled(window.scrollY > 10)
-  }
-
-  window.addEventListener('scroll', handleScroll)
-  return () => window.removeEventListener('scroll', handleScroll)
-}, [])
-
   // 1. Search Logic
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,11 +58,10 @@ export default function DashboardPage() {
     
     setSearchState('LOADING')
     setCustomer(null)
+    setStampsToAdd(1) // Reset counter on new search
     setErrorMsg('')
     setSearchedPhone(phoneNumber)
 
-    // THE FIX: Use !inner to strictly mandate that the customer must be 
-    // registered to THIS specific business_id to show up in the search.
     const { data, error } = await supabase
       .from('customers')
       .select(`
@@ -82,12 +71,10 @@ export default function DashboardPage() {
         loyalty_balances!inner ( current_stamps )
       `)
       .eq('phone_number', phoneNumber)
-      .eq('loyalty_balances.business_id', businessId) // Block cross-store data!
+      .eq('loyalty_balances.business_id', businessId)
       .single()
 
     if (error || !data) {
-      // Now, if they are registered at Store A, but Store B searches for them,
-      // it will correctly fail and trigger the NOT_FOUND state so Store B can register them.
       setSearchState('NOT_FOUND')
       return
     }
@@ -124,7 +111,6 @@ export default function DashboardPage() {
 
       const businessId = businessData.id
 
-      // Step 1: Insert into Customers table
       const { data: newCustomer, error: insertError } = await supabase
         .from('customers')
         .insert([{ 
@@ -140,7 +126,6 @@ export default function DashboardPage() {
         throw new Error('Failed to create customer profile.')
       }
 
-      // Step 2: Initialize Loyalty Balance
       const { error: balanceError } = await supabase
         .from('loyalty_balances')
         .insert([{
@@ -151,7 +136,6 @@ export default function DashboardPage() {
 
       if (balanceError) throw new Error('Failed to initialize loyalty balance.')
 
-      // Success Setup
       setCustomer({
         id: newCustomer.id,
         name: newCustomer.name || 'Valued Customer',
@@ -159,12 +143,12 @@ export default function DashboardPage() {
         phone: newCustomer.phone_number
       })
       
-      // Close modal, clear input, show toast
       setSearchState('FOUND')
       setNewCustomerName('') 
+      setStampsToAdd(1)
       
       setToastMessage('Customer phone number added!')
-      setTimeout(() => setToastMessage(''), 3000) // Hide toast after 3 seconds
+      setTimeout(() => setToastMessage(''), 3000)
 
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred.')
@@ -173,9 +157,8 @@ export default function DashboardPage() {
     }
   }
 
-  // Handle Cancel Button
   const handleCancelRegistration = () => {
-    setNewCustomerName('') // Clear the text field on cancel
+    setNewCustomerName('')
     setSearchState('NOT_FOUND')
   }
 
@@ -186,7 +169,6 @@ export default function DashboardPage() {
     setErrorMsg('')
 
     try {
-      // Step 1: Retrieve the business ID for logging
       const { data: userData, error: userError } = await supabase.auth.getUser()
       if (userError || !userData.user) throw new Error('Authentication error. Please log in again.')
 
@@ -200,20 +182,18 @@ export default function DashboardPage() {
 
       const businessId = businessData.id
 
-      // Step 2: Insert into Transactions Log
       const { error: logError } = await supabase
         .from('transactions_log')
         .insert([{
           business_id: businessId,
           customer_id: customer.id,
           action_type: 'STAMP_ADDED',
-          amount: 1
+          amount: stampsToAdd // Uses dynamic input
         }])
 
       if (logError) throw new Error('Failed to log transaction record.')
 
-      // Step 3: Update the Cumulative Balance
-      const newStampCount = customer.stamps + 1
+      const newStampCount = customer.stamps + stampsToAdd // Adds dynamic amount
       const { error: updateError } = await supabase
         .from('loyalty_balances')
         .update({ current_stamps: newStampCount })
@@ -222,10 +202,10 @@ export default function DashboardPage() {
 
       if (updateError) throw new Error('Failed to update current stamp total.')
 
-      // Step 4: Update the UI state instantly
       setCustomer({ ...customer, stamps: newStampCount })
+      setStampsToAdd(1) // Reset counter to 1 after successful addition
       
-      setToastMessage('Stamp Logged Successfully!')
+      setToastMessage(`${stampsToAdd} Stamp${stampsToAdd > 1 ? 's' : ''} Logged Successfully!`)
       setTimeout(() => setToastMessage(''), 3000)
 
     } catch (err: any) {
@@ -237,14 +217,12 @@ export default function DashboardPage() {
 
   // 4. Redeem Reward Logic
   const handleRedeemReward = async () => {
-    // Ensure customer exists and has at least 10 stamps
     if (!customer || customer.stamps < stampThreshold) return
     
     setIsSubmitting(true)
     setErrorMsg('')
 
     try {
-      // 1. Retrieve the business ID
       const { data: userData, error: userError } = await supabase.auth.getUser()
       if (userError || !userData.user) throw new Error('Authentication error. Please log in again.')
 
@@ -257,21 +235,19 @@ export default function DashboardPage() {
       if (businessError || !businessData) throw new Error('Could not find business profile.')
 
       const businessId = businessData.id
-      const stampsToDeduct = stampThreshold // This could later be fetched dynamically from loyalty_rules
+      const stampsToDeduct = stampThreshold 
 
-      // 2. Insert into Transactions Log
       const { error: logError } = await supabase
         .from('transactions_log')
         .insert([{
           business_id: businessId,
           customer_id: customer.id,
           action_type: 'REWARD_REDEEMED',
-          amount: stampsToDeduct // Tracking how many stamps were spent
+          amount: stampsToDeduct 
         }])
 
       if (logError) throw new Error('Failed to log redemption record.')
 
-      // 3. Update the Cumulative Balance (Deduct 10 stamps)
       const newStampCount = customer.stamps - stampsToDeduct
       const { error: updateError } = await supabase
         .from('loyalty_balances')
@@ -281,7 +257,6 @@ export default function DashboardPage() {
 
       if (updateError) throw new Error('Failed to deduct stamps.')
 
-      // 4. Update the UI state instantly
       setCustomer({ ...customer, stamps: newStampCount })
       
       setToastMessage('Reward Redeemed Successfully!')
@@ -325,7 +300,7 @@ export default function DashboardPage() {
               onChange={(e) => {
                 setPhoneNumber(e.target.value)
                 if (searchState === 'NOT_FOUND') {
-                  setSearchState('IDLE') // Dismisses the stale error card as soon as they start editing
+                  setSearchState('IDLE') 
                 }
               }}
             />
@@ -341,32 +316,65 @@ export default function DashboardPage() {
 
         {/* State: CUSTOMER FOUND */}
         {searchState === 'FOUND' && customer && (
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-8 text-center ring-1 ring-green-100">
-              <h3 className="text-2xl font-bold text-gray-900">{customer.name}</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-8 text-center ring-1 ring-green-100">
+            <h3 className="text-2xl font-bold text-gray-900">{customer.name}</h3>
             <p className="text-gray-500 mb-8">{customer.phone}</p>
             <div className="bg-gray-50 rounded-lg p-6 mb-8 inline-block min-w-[200px]">
               <p className="text-sm text-gray-500 font-medium mb-1">Current Stamps</p>
               <p className="text-5xl font-black text-blue-600">{customer.stamps}</p>
             </div>
             
-            <div className="flex gap-4 justify-center">
-              <button 
-                onClick={handleLogStamp}
-                disabled={isSubmitting}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-lg font-bold text-lg w-full max-w-xs transition-colors shadow-sm disabled:opacity-50"
-              >
-                {isSubmitting ? 'Logging...' : '+1 Stamp'}
-              </button>
+            <div className="flex flex-col gap-4 max-w-sm mx-auto">
               
-              {customer.stamps >= stampThreshold && (
+              {/* Dynamic Stamp Counter & Log Button */}
+              <div className="flex gap-2 w-full">
+                <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
+                  <button 
+                    type="button"
+                    onClick={() => setStampsToAdd(Math.max(1, stampsToAdd - 1))}
+                    disabled={stampsToAdd <= 1 || isSubmitting}
+                    className="w-10 h-10 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xl font-medium leading-none"
+                  >
+                    -
+                  </button>
+                  <input 
+                    type="number"
+                    min="1"
+                    value={stampsToAdd}
+                    onChange={(e) => setStampsToAdd(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-16 h-10 text-center bg-transparent font-bold text-gray-900 outline-none appearance-none"
+                    disabled={isSubmitting}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setStampsToAdd(stampsToAdd + 1)}
+                    disabled={isSubmitting}
+                    className="w-10 h-10 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xl font-medium leading-none"
+                  >
+                    +
+                  </button>
+                </div>
+                
                 <button 
-                  onClick={handleRedeemReward}
+                  onClick={handleLogStamp}
                   disabled={isSubmitting}
-                  className="bg-amber-500 hover:bg-amber-400 text-white px-8 py-4 rounded-lg font-bold text-lg w-full max-w-xs transition-colors shadow-sm disabled:opacity-50"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-4 rounded-lg font-bold text-lg transition-colors shadow-sm disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Processing...' : 'Redeem Reward'}
+                  {isSubmitting ? 'Logging...' : 'Add Stamps'}
                 </button>
-              )}
+              </div>
+              
+              {/* Permanent but Conditionally Disabled Redeem Button */}
+              <button 
+                onClick={handleRedeemReward}
+                disabled={isSubmitting || customer.stamps < stampThreshold}
+                className={`w-full px-8 py-4 rounded-lg font-bold text-lg transition-colors shadow-sm 
+                  ${customer.stamps >= stampThreshold 
+                    ? 'bg-amber-500 hover:bg-amber-400 text-white disabled:opacity-50' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+              >
+                {isSubmitting && customer.stamps >= stampThreshold ? 'Processing...' : `Redeem Reward (${stampThreshold})`}
+              </button>
             </div>
           </div>
         )}
@@ -393,8 +401,6 @@ export default function DashboardPage() {
               <h3 className="text-2xl font-bold text-gray-900 mb-2">New Customer</h3>
               <p className="text-gray-500 mb-6">Registering: <span className="font-semibold text-gray-700">{phoneNumber}</span></p>
               
-              
-              {/* Customer Registration input */}
               <form onSubmit={handleRegister} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -409,7 +415,6 @@ export default function DashboardPage() {
                   />
                 </div>
                 
-                {/* Cancel button */}
                 <div className="flex gap-4">
                   <button
                     type="button"
@@ -419,7 +424,6 @@ export default function DashboardPage() {
                     Cancel
                   </button>
 
-                  {/* Submit button */}
                   <button
                     type="submit"
                     disabled={isSubmitting}
