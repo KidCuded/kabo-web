@@ -5,9 +5,11 @@ import { useState, useEffect} from 'react'
 import { createClient } from '@/utils/supabase/client'
 
 export default function DashboardPage() {
+  const [isScrolled, setIsScrolled] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('')
   const [searchedPhone, setSearchedPhone] = useState('')
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [stampThreshold, setStampThreshold] = useState<number>(10) // New state, defaults to 10
   const [searchState, setSearchState] = useState<'IDLE' | 'LOADING' | 'FOUND' | 'NOT_FOUND' | 'REGISTERING'>('IDLE')
   
   const [customer, setCustomer] = useState<{ id: string; name: string; stamps: number; phone: string } | null>(null)
@@ -34,10 +36,30 @@ export default function DashboardPage() {
 
       if (businessData) {
         setBusinessId(businessData.id)
+        
+        // Fetch the merchant's specific stamp threshold
+        const { data: ruleData } = await supabase
+          .from('loyalty_rules')
+          .select('stamp_threshold')
+          .eq('business_id', businessData.id)
+          .single()
+          
+        if (ruleData) {
+          setStampThreshold(ruleData.stamp_threshold)
+        }
       }
     }
     fetchBusiness()
   }, [])
+
+  useEffect(() => {
+  const handleScroll = () => {
+    setIsScrolled(window.scrollY > 10)
+  }
+
+  window.addEventListener('scroll', handleScroll)
+  return () => window.removeEventListener('scroll', handleScroll)
+}, [])
 
   // 1. Search Logic
   const handleSearch = async (e: React.FormEvent) => {
@@ -216,7 +238,7 @@ export default function DashboardPage() {
   // 4. Redeem Reward Logic
   const handleRedeemReward = async () => {
     // Ensure customer exists and has at least 10 stamps
-    if (!customer || customer.stamps < 10) return
+    if (!customer || customer.stamps < stampThreshold) return
     
     setIsSubmitting(true)
     setErrorMsg('')
@@ -235,7 +257,7 @@ export default function DashboardPage() {
       if (businessError || !businessData) throw new Error('Could not find business profile.')
 
       const businessId = businessData.id
-      const stampsToDeduct = 10 // This could later be fetched dynamically from loyalty_rules
+      const stampsToDeduct = stampThreshold // This could later be fetched dynamically from loyalty_rules
 
       // 2. Insert into Transactions Log
       const { error: logError } = await supabase
@@ -336,7 +358,7 @@ export default function DashboardPage() {
                 {isSubmitting ? 'Logging...' : '+1 Stamp'}
               </button>
               
-              {customer.stamps >= 10 && (
+              {customer.stamps >= stampThreshold && (
                 <button 
                   onClick={handleRedeemReward}
                   disabled={isSubmitting}
