@@ -30,7 +30,9 @@ export default function Header() {
                 <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
                     <span className="text-white font-black text-xl leading-none">K</span>
                 </div>
-                <span className="text-2xl font-black text-white tracking-tight">KABO</span>
+                <Link href="/" className="text-2xl font-black text-white tracking-tight">
+                    KABO
+                </Link>
             </div>
             <nav className="flex items-center gap-6">
                 <Link href="/login" className="text-sm font-semibold text-gray-400 hover:text-white transition-colors">
