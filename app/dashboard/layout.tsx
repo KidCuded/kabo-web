@@ -21,7 +21,9 @@ export default async function DashboardLayout({
     .eq('auth_user_id', userData.user.id)
     .single()
 
-  if (!business) redirect('/') 
+  if (!business) {
+    redirect('/onboarding')
+  }
 
   // --- LOCK SCREEN: TRIAL EXPIRED ---
   const isTrialExpired = 

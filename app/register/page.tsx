@@ -8,7 +8,6 @@ export default async function RegisterPage(props: {
   const searchParams = await props.searchParams
   const message = searchParams?.message
 
-  // 1. Intercept the success message to show the email confirmation UI
   if (message === 'check_email') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
@@ -17,16 +16,15 @@ export default async function RegisterPage(props: {
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h3>
-          <p className="text-gray-600 mb-6">We sent a verification link to your email address. Click the link to activate your store.</p>
+          <p className="text-gray-600 mb-6">We sent a verification link to your email address. Click the link to activate your account.</p>
           <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500">
-            Return to Login
+            Proceed to Login
           </Link>
         </div>
       </div>
     )
   }
 
-  // 2. Only show the error banner if the message is an actual error
   const errorMessage = message && message !== 'check_email' ? message : null
 
   return (
@@ -35,7 +33,7 @@ export default async function RegisterPage(props: {
         
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">KABO</h1>
-          <p className="mt-2 text-sm text-gray-500">Register your business</p>
+          <p className="mt-2 text-sm text-gray-500">Create your account</p>
         </div>
 
         {errorMessage && (
@@ -45,20 +43,6 @@ export default async function RegisterPage(props: {
         )}
 
         <form action={register} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700" htmlFor="businessName">
-              Business Name
-            </label>
-            <input
-              id="businessName"
-              type="text"
-              name="businessName"
-              required
-              placeholder="e.g., Kopi Kampung"
-              className="mt-2 block w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700" htmlFor="email">
               Email Address

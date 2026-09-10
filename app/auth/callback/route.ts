@@ -6,7 +6,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // Default redirect after verification
+  // 1. Capture the 'next' parameter from the URL, defaulting to /login if missing
   const next = searchParams.get('next') ?? '/login'
 
   if (code) {
@@ -14,10 +14,10 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
+      // 2. Safely redirect to the 'next' destination (e.g., /login)
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // If the link is expired or invalid, send them back to login with an error
   return NextResponse.redirect(`${origin}/login?error=Invalid or expired verification link`)
 }
