@@ -1,11 +1,33 @@
 // app/register/page.tsx
 import { register } from './actions'
+import Link from 'next/link'
 
 export default async function RegisterPage(props: {
   searchParams: Promise<{ message?: string }>
 }) {
   const searchParams = await props.searchParams
-  const errorMessage = searchParams?.message
+  const message = searchParams?.message
+
+  // 1. Intercept the success message to show the email confirmation UI
+  if (message === 'check_email') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg ring-1 ring-gray-100 text-center">
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h3>
+          <p className="text-gray-600 mb-6">We sent a verification link to your email address. Click the link to activate your store.</p>
+          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500">
+            Return to Login
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // 2. Only show the error banner if the message is an actual error
+  const errorMessage = message && message !== 'check_email' ? message : null
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">

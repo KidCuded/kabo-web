@@ -38,9 +38,12 @@ export default async function DashboardLayout({
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Your trial has ended</h2>
           <p className="text-gray-500 mb-8">
-            We hope you enjoyed using KABO. Upgrade to a Pro plan to unlock your dashboard and keep rewarding your customers.
+            We hope you enjoyed using KABO. Upgrade to Pro plan to unlock your store and keep rewarding your customers.
           </p>
-          <button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-sm mb-3">
+          <Link href="/dashboard" className="w-full text-lg font-bold bg-blue-500 text-white px-4 py-4 rounded-xl hover:bg-blue-400">
+              Go to Dashboard
+          </Link>
+          <button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-sm my-2">
             Upgrade to Pro (RM 111/mo)
           </button>
           <p className="text-xs text-gray-400">Secure FPX Direct Debit via Curlec</p>

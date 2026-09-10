@@ -19,11 +19,11 @@ export async function register(formData: FormData) {
   })
 
   if (authError) {
-    redirect(`/register?message=${authError.message}`)
+    return redirect(`/register?message=${authError.message}`)
   }
 
   // 2. Create the Business Profile & Default Rules
-  if (authData.user) {
+  if (authData.user && !authData.session) {
     // Insert the business record
     const { data: newBusiness, error: businessError } = await supabase
       .from('businesses')
@@ -35,7 +35,7 @@ export async function register(formData: FormData) {
       .single()
 
     if (businessError) {
-      redirect(`/register?message=Account created, but failed to save business details.`)
+      return redirect('/register?message=check_email')
     }
 
     // Initialize default loyalty rules so the dashboard works instantly
