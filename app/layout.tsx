@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KABO",
-  description: "Digital Loyalty System",
+  title: "KABO - Digital Loyalty Program",
+  description: "A lightning-fast digital platform that keeps customers coming back for rewards, catches negative feedback privately, and automatically drives your best customers to leave 5-star Google Reviews.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
