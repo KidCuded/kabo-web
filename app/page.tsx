@@ -7,10 +7,6 @@ export default function LandingPage() {
     <div className="min-h-screen bg-black flex flex-col font-sans selection:bg-blue-500/30">
       
       <Header/>
-      {/* Icon */}
-      <head>
-        <link rel="icon" href="/favicon.ico" />
-      </head>
 
       {/* Hero Section */}
       <main className="flex-1">
