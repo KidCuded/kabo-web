@@ -9,6 +9,7 @@ export default function SubscriptionPage() {
   const [trialEndsAt, setTrialEndsAt] = useState<Date | null>(null)
   const [daysLeft, setDaysLeft] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [isStartingTrial, setIsStartingTrial] = useState(false) // New loading state for the trial button
 
   const supabase = createClient()
 
@@ -39,11 +40,45 @@ export default function SubscriptionPage() {
     fetchSubscription()
   }, [])
 
+  // NEW FUNCTION: Start the 14-day trial
+  const startTrial = async () => {
+    setIsStartingTrial(true)
+    
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) throw new Error('Not authenticated')
+
+      // Calculate the date 14 days from now
+      const endDate = new Date()
+      endDate.setDate(endDate.getDate() + 14)
+
+      const { error } = await supabase
+        .from('businesses')
+        .update({
+          subscription_status: 'trialing',
+          trial_ends_at: endDate.toISOString()
+        })
+        .eq('auth_user_id', userData.user.id)
+
+      if (error) throw error
+
+      // Update local state to reflect the new trial status immediately
+      setStatus('trialing')
+      setTrialEndsAt(endDate)
+      setDaysLeft(14)
+      
+    } catch (error) {
+      console.error('Failed to start trial:', error)
+      alert('Failed to start your trial. Please try again or contact support.')
+    } finally {
+      setIsStartingTrial(false)
+    }
+  }
+
   const handleCurlecCheckout = async () => {
     setIsLoading(true)
     
     try {
-      // 1. Call your secure API route
       const response = await fetch('/api/curlec/checkout', {
         method: 'POST',
       })
@@ -52,8 +87,6 @@ export default function SubscriptionPage() {
       
       if (!response.ok) throw new Error(data.error)
 
-      // 2. Build the Curlec Checkout URL
-      // (Replace this base URL with Curlec's actual testing/production endpoint)
       const curlecEndpoint = 'https://demo.curlec.com/checkout'
       
       const params = new URLSearchParams({
@@ -65,7 +98,6 @@ export default function SubscriptionPage() {
         returnUrl: data.payload.returnUrl
       })
 
-      // 3. Redirect the merchant to the payment gateway
       window.location.href = `${curlecEndpoint}?${params.toString()}`
 
     } catch (error) {
@@ -86,6 +118,10 @@ export default function SubscriptionPage() {
           <h3 className="text-lg font-bold text-gray-900 mb-6 border-b border-gray-100 pb-2">Current Plan</h3>
           
           <div className="flex-1">
+            {status === 'loading' && (
+              <p className="text-gray-500 animate-pulse">Checking status...</p>
+            )}
+
             {status === 'trialing' && (
               <div>
                 <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-bold mb-4">
@@ -103,7 +139,15 @@ export default function SubscriptionPage() {
                 <div className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-bold mb-4">
                   Setup Mode
                 </div>
-                <p className="text-gray-600">Your store is not yet active. Start your trial from the dashboard banner to begin.</p>
+                <p className="text-gray-600 mb-6">Your store is not yet active. Start your 14-day free trial to unlock all features.</p>
+                {/* 1. NEW BUTTON TO START TRIAL */}
+                <button
+                  onClick={startTrial}
+                  disabled={isStartingTrial}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isStartingTrial ? 'Starting Trial...' : 'Start 14-Day Free Trial'}
+                </button>
               </div>
             )}
 

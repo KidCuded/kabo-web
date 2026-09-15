@@ -110,6 +110,11 @@ export default async function DashboardLayout({
               Feedback
             </label>
           </Link>
+          <Link href="/dashboard/customers" className="block w-full">
+            <label htmlFor="mobile-sidebar" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors cursor-pointer">
+              Customers
+            </label>
+          </Link>
           <Link href="/dashboard/settings" className="block w-full">
             <label htmlFor="mobile-sidebar" className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors cursor-pointer">
               Settings

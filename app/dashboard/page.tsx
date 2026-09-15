@@ -11,8 +11,9 @@ export default function DashboardPage() {
   const [stampThreshold, setStampThreshold] = useState<number>(10)
   const [searchState, setSearchState] = useState<'IDLE' | 'LOADING' | 'FOUND' | 'NOT_FOUND' | 'REGISTERING'>('IDLE')
   
-  const [customer, setCustomer] = useState<{ id: string; name: string; stamps: number; phone: string } | null>(null)
+  const [customer, setCustomer] = useState<{ id: string; name: string; stamps: number; phone: string; totalSpent: number } | null>(null)
   const [stampsToAdd, setStampsToAdd] = useState<number>(1)
+  const [amountSpent, setAmountSpent] = useState<string>('') // New state for checkout amount
   
   const [newCustomerName, setNewCustomerName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -56,6 +57,7 @@ export default function DashboardPage() {
     setSearchState('LOADING')
     setCustomer(null)
     setStampsToAdd(1) 
+    setAmountSpent('')
     setErrorMsg('')
     setSearchedPhone(phoneNumber)
 
@@ -64,7 +66,8 @@ export default function DashboardPage() {
       .select(`
         id, 
         name, 
-        phone_number, 
+        phone_number,
+        total_spent,
         loyalty_balances!inner ( current_stamps )
       `)
       .eq('phone_number', phoneNumber)
@@ -82,7 +85,8 @@ export default function DashboardPage() {
       id: data.id,
       name: data.name || 'Valued Customer',
       stamps: balances?.current_stamps || 0,
-      phone: data.phone_number
+      phone: data.phone_number,
+      totalSpent: data.total_spent || 0
     })
     
     setSearchState('FOUND')
@@ -90,6 +94,7 @@ export default function DashboardPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!businessId) return
     setIsSubmitting(true)
     setErrorMsg('')
 
@@ -97,22 +102,13 @@ export default function DashboardPage() {
       const { data: userData, error: userError } = await supabase.auth.getUser()
       if (userError || !userData.user) throw new Error('Authentication error. Please log in again.')
 
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('auth_user_id', userData.user.id)
-        .single()
-        
-      if (businessError || !businessData) throw new Error('Could not find business profile.')
-
-      const businessId = businessData.id
-
       const { data: newCustomer, error: insertError } = await supabase
         .from('customers')
         .insert([{ 
           business_id: businessId,
           phone_number: phoneNumber,
-          name: newCustomerName || null 
+          name: newCustomerName || null,
+          total_spent: 0
         }])
         .select()
         .single()
@@ -136,12 +132,14 @@ export default function DashboardPage() {
         id: newCustomer.id,
         name: newCustomer.name || 'Valued Customer',
         stamps: 0,
-        phone: newCustomer.phone_number
+        phone: newCustomer.phone_number,
+        totalSpent: 0
       })
       
       setSearchState('FOUND')
       setNewCustomerName('') 
       setStampsToAdd(1)
+      setAmountSpent('')
       
       setToastMessage('Customer registered successfully!')
       setTimeout(() => setToastMessage(''), 3000)
@@ -153,41 +151,33 @@ export default function DashboardPage() {
     }
   }
 
-  const handleCancelRegistration = () => {
-    setNewCustomerName('')
-    setSearchState('NOT_FOUND')
-  }
-
   const handleLogStamp = async () => {
-    if (!customer) return
+    if (!customer || !businessId) return
+    
+    const spendValue = parseFloat(amountSpent)
+    if (isNaN(spendValue) || spendValue < 0) {
+      setErrorMsg('Please enter a valid amount spent.')
+      return
+    }
+
     setIsSubmitting(true)
     setErrorMsg('')
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userError || !userData.user) throw new Error('Authentication error. Please log in again.')
-
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('auth_user_id', userData.user.id)
-        .single()
-        
-      if (businessError || !businessData) throw new Error('Could not find business profile.')
-
-      const businessId = businessData.id
-
+      // 1. Log the transaction with the amount spent
       const { error: logError } = await supabase
         .from('transactions_log')
         .insert([{
           business_id: businessId,
           customer_id: customer.id,
           action_type: 'STAMP_ADDED',
-          amount: stampsToAdd 
+          amount: stampsToAdd,
+          amount_spent: spendValue
         }])
 
       if (logError) throw new Error('Failed to log transaction record.')
 
+      // 2. Update the stamp balance
       const newStampCount = customer.stamps + stampsToAdd 
       const { error: updateError } = await supabase
         .from('loyalty_balances')
@@ -197,8 +187,19 @@ export default function DashboardPage() {
 
       if (updateError) throw new Error('Failed to update current stamp total.')
 
-      setCustomer({ ...customer, stamps: newStampCount })
+      // 3. Update the customer's total spent
+      const newTotalSpent = customer.totalSpent + spendValue
+      const { error: customerError } = await supabase
+        .from('customers')
+        .update({ total_spent: newTotalSpent })
+        .eq('id', customer.id)
+        
+      if (customerError) throw new Error('Failed to update customer lifetime spending.')
+
+      // Update UI state
+      setCustomer({ ...customer, stamps: newStampCount, totalSpent: newTotalSpent })
       setStampsToAdd(1) 
+      setAmountSpent('')
       
       setToastMessage(`${stampsToAdd} Stamp${stampsToAdd > 1 ? 's' : ''} Logged!`)
       setTimeout(() => setToastMessage(''), 3000)
@@ -211,26 +212,15 @@ export default function DashboardPage() {
   }
 
   const handleRedeemReward = async () => {
-    if (!customer || customer.stamps < stampThreshold) return
+    if (!customer || !businessId || customer.stamps < stampThreshold) return
     
     setIsSubmitting(true)
     setErrorMsg('')
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser()
-      if (userError || !userData.user) throw new Error('Authentication error. Please log in again.')
-
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('auth_user_id', userData.user.id)
-        .single()
-        
-      if (businessError || !businessData) throw new Error('Could not find business profile.')
-
-      const businessId = businessData.id
       const stampsToDeduct = stampThreshold 
 
+      // Note: amount_spent is intentionally omitted (null) for redemptions
       const { error: logError } = await supabase
         .from('transactions_log')
         .insert([{
@@ -292,9 +282,7 @@ export default function DashboardPage() {
               value={phoneNumber}
               onChange={(e) => {
                 setPhoneNumber(e.target.value)
-                if (searchState === 'NOT_FOUND') {
-                  setSearchState('IDLE') 
-                }
+                if (searchState === 'NOT_FOUND') setSearchState('IDLE') 
               }}
             />
             <button
@@ -309,53 +297,82 @@ export default function DashboardPage() {
 
         {/* State: CUSTOMER FOUND */}
         {searchState === 'FOUND' && customer && (
-          <div className="bg-white rounded-xl shadow-sm border border-green-200 p-5 sm:p-8 text-center ring-1 ring-green-100">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center ring-1 ring-gray-100">
             <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{customer.name}</h3>
-            <p className="text-gray-500 mb-6 sm:mb-8">{customer.phone}</p>
-            <div className="bg-gray-50 rounded-lg p-5 sm:p-6 mb-6 sm:mb-8 inline-block min-w-full sm:min-w-[200px]">
-              <p className="text-sm text-gray-500 font-medium mb-1">Current Stamps</p>
-              <p className="text-5xl font-black text-blue-600">{customer.stamps}</p>
+            <p className="text-gray-500 mb-4">{customer.phone}</p>
+            
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6 sm:mb-8">
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 flex-1 max-w-[200px] mx-auto sm:mx-0 border border-gray-100">
+                <p className="text-sm text-gray-500 font-medium mb-1">Current Stamps</p>
+                <p className="text-4xl font-black text-blue-600">{customer.stamps}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 flex-1 min-w-fit max-w-[200px] mx-auto sm:mx-0 border border-gray-100">
+                <p className="text-sm text-gray-500 font-medium mb-1">Total Spent</p>
+                <p className="text-4xl font-black text-blue-600">
+                  <span className="text-xl mr-1">RM</span>
+                  {customer.totalSpent.toFixed(2)}
+                </p>
+              </div>
             </div>
             
-            <div className="flex flex-col gap-3 sm:gap-4 max-w-sm mx-auto">
-              
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full">
-                <div className="flex items-center justify-between sm:justify-center bg-gray-100 rounded-lg p-1 border border-gray-200 w-full sm:w-auto">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6 max-w-sm mx-auto mb-4">
+              <div className="space-y-4">
+
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full">
+                  <div className="flex items-center justify-between sm:justify-center bg-white rounded-lg p-1 border border-gray-300 w-full sm:w-auto">
+                    <button 
+                      type="button"
+                      onClick={() => setStampsToAdd(Math.max(1, stampsToAdd - 1))}
+                      disabled={stampsToAdd <= 1 || isSubmitting}
+                      className="w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center bg-gray-50 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 text-2xl sm:text-xl font-medium leading-none active:bg-gray-200"
+                    >
+                      -
+                    </button>
+                    <input 
+                      type="number"
+                      min="1"
+                      value={stampsToAdd}
+                      onChange={(e) => setStampsToAdd(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full sm:w-16 h-12 sm:h-10 text-center bg-transparent font-bold text-lg sm:text-base text-gray-900 outline-none appearance-none"
+                      disabled={isSubmitting}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setStampsToAdd(stampsToAdd + 1)}
+                      disabled={isSubmitting}
+                      className="w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center bg-gray-50 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50 text-2xl sm:text-xl font-medium leading-none active:bg-gray-200"
+                    >
+                      +
+                    </button>
+                  </div>
+                  
                   <button 
-                    type="button"
-                    onClick={() => setStampsToAdd(Math.max(1, stampsToAdd - 1))}
-                    disabled={stampsToAdd <= 1 || isSubmitting}
-                    className="w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-2xl sm:text-xl font-medium leading-none active:bg-gray-100"
+                    onClick={handleLogStamp}
+                    disabled={isSubmitting || !amountSpent}
+                    className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-colors shadow-sm disabled:opacity-50 active:scale-95"
                   >
-                    -
-                  </button>
-                  <input 
-                    type="number"
-                    min="1"
-                    value={stampsToAdd}
-                    onChange={(e) => setStampsToAdd(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full sm:w-16 h-12 sm:h-10 text-center bg-transparent font-bold text-lg sm:text-base text-gray-900 outline-none appearance-none"
-                    disabled={isSubmitting}
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setStampsToAdd(stampsToAdd + 1)}
-                    disabled={isSubmitting}
-                    className="w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-md shadow-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-2xl sm:text-xl font-medium leading-none active:bg-gray-100"
-                  >
-                    +
+                    {isSubmitting ? 'Logging...' : 'Add Stamps'}
                   </button>
                 </div>
-                
-                <button 
-                  onClick={handleLogStamp}
-                  disabled={isSubmitting}
-                  className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-colors shadow-sm disabled:opacity-50 active:scale-95"
-                >
-                  {isSubmitting ? 'Logging...' : 'Add Stamps'}
-                </button>
+                {/* Amount Spent Input */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 text-left mb-1">Checkout Amount (RM)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    required
+                    value={amountSpent}
+                    onChange={(e) => setAmountSpent(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    disabled={isSubmitting}
+                  />
+                </div>
               </div>
-              
+            </div>
+
+            <div className="max-w-sm mx-auto">
               <button 
                 onClick={handleRedeemReward}
                 disabled={isSubmitting || customer.stamps < stampThreshold}
@@ -364,7 +381,7 @@ export default function DashboardPage() {
                     ? 'bg-amber-500 hover:bg-amber-400 text-white disabled:opacity-50' 
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
               >
-                {isSubmitting && customer.stamps >= stampThreshold ? 'Processing...' : `Redeem Reward (${stampThreshold})`}
+                {isSubmitting && customer.stamps >= stampThreshold ? 'Processing...' : `Redeem Reward (${stampThreshold} Stamps)`}
               </button>
             </div>
           </div>
@@ -385,7 +402,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* State: REGISTERING (Overlay) */}
+      {/* State: REGISTERING */}
       {searchState === 'REGISTERING' && (
           <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-6 sm:p-8 w-full max-w-md">
@@ -406,11 +423,13 @@ export default function DashboardPage() {
                   />
                 </div>
                 
-                {/* On mobile, put the primary action on top/right to follow natural flow, stack buttons */}
                 <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
                   <button
                     type="button"
-                    onClick={handleCancelRegistration}
+                    onClick={() => {
+                      setNewCustomerName('')
+                      setSearchState('NOT_FOUND')
+                    }}
                     className="w-full sm:flex-1 bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors active:bg-gray-100"
                   >
                     Cancel
