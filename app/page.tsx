@@ -6,10 +6,12 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-black flex flex-col font-sans selection:bg-blue-500/30">
       
-      <Header />
+      <Header/>
+      {/* Icon */}
       <head>
         <link rel="icon" href="favicon.ico" />
       </head>
+      
       {/* Hero Section */}
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 text-center relative overflow-hidden">
