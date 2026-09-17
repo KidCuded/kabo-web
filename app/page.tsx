@@ -122,7 +122,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-2">Pro Plan</h3>
                 <div className="flex items-baseline gap-2 mb-6">
-                  <span className="text-5xl font-black text-white">RM 111</span>
+                  <span className="text-5xl font-black text-white">RM 150</span>
                   <span className="text-gray-400 font-medium">/ month</span>
                 </div>
                 <p className="text-blue-200/70 mb-8 h-12">The complete retention and reputation engine for modern stores.</p>

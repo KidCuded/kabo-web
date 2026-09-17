@@ -1,62 +1,54 @@
 // app/api/curlec/checkout/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import crypto from 'crypto'
+import Razorpay from 'razorpay'
+
+const curlec = new Razorpay({
+  key_id: process.env.CURLEC_KEY_ID!,
+  key_secret: process.env.CURLEC_KEY_SECRET!,
+})
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
     
-    // 1. Verify the merchant is logged in
-    const { data: userData, error: authError } = await supabase.auth.getUser()
-    if (authError || !userData.user) {
+    if (!userData.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // 2. Fetch business details for the billing profile
-    const { data: business, error: businessError } = await supabase
+    // 1. Fetch the merchant's business details to attach to the subscription
+    const { data: business } = await supabase
       .from('businesses')
-      .select('id, store_name, contact_number')
+      .select('id, store_name')
       .eq('auth_user_id', userData.user.id)
       .single()
 
-    if (businessError || !business) {
+    if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
-    // 3. Define Curlec Parameters
-    // (Note: Check your specific Curlec API documentation for exact field names)
-    const merchantId = process.env.CURLEC_MERCHANT_ID
-    const merchantSecret = process.env.CURLEC_MERCHANT_SECRET
-    
-    if (!merchantId || !merchantSecret) {
-      throw new Error('Curlec credentials missing from environment variables')
-    }
+    // 2. Create the recurring subscription in Curlec
+    const subscription = await curlec.subscriptions.create({
+      plan_id: process.env.NEXT_PUBLIC_CURLEC_PRO_PLAN_ID!,
+      customer_notify: 1,
+      total_count: 120, // E.g., 10 years of monthly billing
+      notes: {
+        business_id: business.id, // Pass this so your webhook knows who paid
+        store_name: business.store_name,
+      }
+    })
 
-    const orderReference = `KABO_${business.id}_${Date.now()}`
-    const amount = "50.00"
-
-    // 4. Generate the Security Signature (Hash)
-    // Curlec typically requires a SHA256 hash of the payload + your secret key
-    const rawString = `${merchantId}${orderReference}${amount}${merchantSecret}`
-    const signature = crypto.createHash('sha256').update(rawString).digest('hex')
-
-    // 5. Construct the final payload
-    const curlecPayload = {
-      merchantId: merchantId,
-      reference: orderReference,
-      amount: amount,
-      customerName: business.store_name,
-      customerPhone: business.contact_number || '0000000000',
-      signature: signature,
-      // The URL Curlec will send the user back to after payment:
-      returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?status=processing`
-    }
-
-    return NextResponse.json({ payload: curlecPayload })
+    // 3. Return the generated subscription ID to the frontend
+    return NextResponse.json({ 
+      subscriptionId: subscription.id 
+    })
 
   } catch (error: any) {
-    console.error('Curlec Checkout Error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error('Curlec API Error:', error)
+    return NextResponse.json(
+      { error: 'Failed to initialize checkout' }, 
+      { status: 500 }
+    )
   }
 }

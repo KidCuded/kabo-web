@@ -79,26 +79,39 @@ export default function SubscriptionPage() {
     setIsLoading(true)
     
     try {
-      const response = await fetch('/api/curlec/checkout', {
-        method: 'POST',
-      })
-      
+      // 1. Fetch the subscription ID from your Next.js route
+      const response = await fetch('/api/curlec/checkout', { method: 'POST' })
       const data = await response.json()
       
       if (!response.ok) throw new Error(data.error)
 
-      const curlecEndpoint = 'https://demo.curlec.com/checkout'
-      
-      const params = new URLSearchParams({
-        merchantId: data.payload.merchantId,
-        reference: data.payload.reference,
-        amount: data.payload.amount,
-        customerName: data.payload.customerName,
-        signature: data.payload.signature,
-        returnUrl: data.payload.returnUrl
-      })
+      // 2. Load the Curlec/Razorpay checkout script dynamically
+      const script = document.createElement('script')
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+      script.onload = () => {
+        
+        // 3. Configure the checkout modal
+        const options = {
+          // Public Key ID for initializing the inline checkout UI
+          key: process.env.NEXT_PUBLIC_CURLEC_KEY_ID, 
+          subscription_id: data.subscriptionId,
+          name: 'KABO Pro',
+          description: 'Monthly Subscription via FPX',
+          theme: {
+            color: '#2563EB',
+          },
+          handler: function (response: any) {
+            alert('Payment mandate authorized successfully!')
+          },
+        }
 
-      window.location.href = `${curlecEndpoint}?${params.toString()}`
+        // 4. Open the modal
+        const paymentObject = new (window as any).Razorpay(options)
+        paymentObject.open()
+        setIsLoading(false)
+      }
+      
+      document.body.appendChild(script)
 
     } catch (error) {
       console.error('Checkout failed:', error)
@@ -169,7 +182,7 @@ export default function SubscriptionPage() {
           
           <div className="flex-1">
             <div className="mb-6">
-              <span className="text-4xl font-black">RM 111</span>
+              <span className="text-4xl font-black">RM 150</span>
               <span className="text-gray-400"> / month</span>
             </div>
             
