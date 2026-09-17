@@ -40,7 +40,9 @@ export default function SubscriptionPage() {
     fetchSubscription()
   }, [])
 
-  // NEW FUNCTION: Start the 14-day trial
+  // Start Trial Function
+  // This function will be called when the user clicks the "Start Trial" button.
+  // It updates the subscription status to 'trialing' and sets the trial end date to 14 days from now.
   const startTrial = async () => {
     setIsStartingTrial(true)
     
