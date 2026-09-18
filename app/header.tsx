@@ -22,8 +22,8 @@ export default function Header() {
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${
         isScrolled 
-          ? "backdrop-blur-md bg-gray/80 border-b-[0.5px] border-gray-500 shadow-sm" // Shown when scrolled
-          : "bg-transparent border-b border-transparent" // Blended seamlessly when at top
+          ? "backdrop-blur-md bg-gray/80 border-b-[0.5px] border-gray-500/20 shadow-sm" // Shown when scrolled
+          : "bg-transparent border-b border-gray-700/90" // Blended seamlessly when at top
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2">
