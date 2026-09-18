@@ -1,3 +1,8 @@
+// app/components/DarkVeil.tsx
+// This component creates a dynamic, animated background using WebGL and the OGL library. 
+// It features a customizable shader that can produce various visual effects, including noise, scanlines, hue shifts, and warping. 
+// The component is designed to be responsive and will adjust its size based on the parent container's dimensions.
+
 "use client";
 import { useRef, useEffect } from 'react';
 import { Renderer, Program, Mesh, Triangle, Vec2 } from 'ogl';
