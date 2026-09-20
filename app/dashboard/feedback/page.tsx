@@ -17,10 +17,18 @@ export default async function FeedbackPage() {
 
   if (!businessData) redirect('/login')
 
-  // 2. Fetch all reviews for this business
+  // 2. Fetch all reviews and join the customers table to get the reviewer's identity
   const { data: reviews } = await supabase
     .from('reviews')
-    .select('rating, comment, created_at')
+    .select(`
+      rating, 
+      comment, 
+      created_at,
+      customers (
+        name,
+        phone_number
+      )
+    `)
     .eq('business_id', businessData.id)
     .order('created_at', { ascending: false })
 
@@ -60,33 +68,48 @@ export default async function FeedbackPage() {
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {reviews.map((review, index) => (
-              <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex justify-between items-start mb-3">
-                  {renderStars(review.rating)}
-                  <span className="text-sm text-gray-400 font-medium">
-                    {new Date(review.created_at || Date.now()).toLocaleDateString('en-MY', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
+            {reviews.map((review, index) => {
+              // Extract customer data, handling Supabase's potential array vs object return types for joins
+              const customerInfo = Array.isArray(review.customers) ? review.customers[0] : review.customers;
+              const displayName = customerInfo?.name && customerInfo.name !== 'Valued Customer' 
+                ? customerInfo.name 
+                : 'Unnamed Customer';
+              const displayPhone = customerInfo?.phone_number || 'No phone recorded';
+
+              return (
+                <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      {renderStars(review.rating)}
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="font-semibold text-gray-900">{displayName}</span>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-sm font-mono text-gray-500">{displayPhone}</span>
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-400 font-medium whitespace-nowrap ml-4">
+                      {new Date(review.created_at || Date.now()).toLocaleDateString('en-MY', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                  
+                  {review.comment ? (
+                    <p className="text-gray-700 bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                      "{review.comment}"
+                    </p>
+                  ) : (
+                    <p className="text-gray-400 italic text-sm">
+                      No written comment provided.
+                    </p>
+                  )}
                 </div>
-                
-                {/* Only show the comment box if they actually typed something */}
-                {review.comment ? (
-                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    "{review.comment}"
-                  </p>
-                ) : (
-                  <p className="text-gray-400 italic text-sm">
-                    No written comment provided.
-                  </p>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

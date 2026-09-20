@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 
 export default function CustomerCheckPage() {
@@ -15,13 +16,13 @@ export default function CustomerCheckPage() {
   const [rewardDesc, setRewardDesc] = useState('Reward')
   const [reviewUrl, setReviewUrl] = useState('')
   
-  // NEW: Track if the store is allowed to process customers
+  // Track if the store is allowed to process customers
   const [storeStatus, setStoreStatus] = useState<'LOADING' | 'INACTIVE' | 'ACTIVE'>('LOADING')
 
   // Customer Loyalty State
   const [phoneNumber, setPhoneNumber] = useState('')
   const [searchState, setSearchState] = useState<'IDLE' | 'LOADING' | 'FOUND' | 'NOT_FOUND'>('IDLE')
-  const [customer, setCustomer] = useState<{ name: string; stamps: number } | null>(null)
+  const [customer, setCustomer] = useState<{ id: string; name: string; stamps: number } | null>(null)
 
   // Feedback State
   const [rating, setRating] = useState(0)
@@ -36,7 +37,6 @@ export default function CustomerCheckPage() {
     async function fetchStoreDetails() {
       if (!businessId) return
 
-      // Fetch subscription_status along with the other details
       const { data: bData } = await supabase
         .from('businesses')
         .select('store_name, google_review_url, subscription_status')
@@ -46,8 +46,6 @@ export default function CustomerCheckPage() {
       if (bData) {
         setStoreName(bData.store_name)
         if (bData.google_review_url) setReviewUrl(bData.google_review_url)
-        
-        // Lock the page if they are still in setup mode
         setStoreStatus(bData.subscription_status === 'inactive' ? 'INACTIVE' : 'ACTIVE')
       }
 
@@ -71,7 +69,6 @@ export default function CustomerCheckPage() {
 
     setSearchState('LOADING')
 
-    // Inner join customers and loyalty_balances for THIS specific business
     const { data, error } = await supabase
       .from('customers')
       .select(`
@@ -81,7 +78,7 @@ export default function CustomerCheckPage() {
       `)
       .eq('phone_number', phoneNumber)
       .eq('loyalty_balances.business_id', businessId)
-      .maybeSingle() // <--- Use maybeSingle() instead of single() to prevent crashes on duplicates
+      .maybeSingle()
 
     if (error || !data) {
       setSearchState('NOT_FOUND')
@@ -93,12 +90,14 @@ export default function CustomerCheckPage() {
       : data.loyalty_balances
 
     setCustomer({
+      id: data.id, // <--- Add this line
       name: data.name || 'Valued Customer',
       stamps: balances?.current_stamps || 0
     })
 
     setSearchState('FOUND')
   }
+
   const resetSearch = () => {
     setSearchState('IDLE')
     setPhoneNumber('')
@@ -116,8 +115,12 @@ export default function CustomerCheckPage() {
   }
 
   const submitToDatabase = async (finalRating: number, text: string) => {
+    // Safety check to ensure we have the customer ID
+    if (!customer?.id) return
+
     await supabase.from('reviews').insert([{
       business_id: businessId,
+      customer_id: customer.id,
       rating: finalRating,
       comment: text
     }])
@@ -141,7 +144,6 @@ export default function CustomerCheckPage() {
 
       <div className="w-full max-w-md space-y-6">
         
-        {/* THE NEW LOCK SCREEN */}
         {storeStatus === 'INACTIVE' ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center animate-in fade-in">
             <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -155,31 +157,44 @@ export default function CustomerCheckPage() {
             {/* --- LOYALTY LOOKUP CARD --- */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               {searchState !== 'FOUND' ? (
-                <form onSubmit={handleCheckStamps} className="space-y-6">
-                  <div className="text-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-800">Check Your Stamps</h2>
-                  </div>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="Phone Number (e.g., 0123456789)"
-                    className="w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                  />
-                  {searchState === 'NOT_FOUND' && (
-                    <div className="text-red-600 text-sm text-center font-medium bg-red-50 py-3 rounded-lg">
-                      No profile found for this number at this store.
+                <div className="space-y-6">
+                  <form onSubmit={handleCheckStamps} className="space-y-6">
+                    <div className="text-center mb-6">
+                      <h2 className="text-xl font-bold text-gray-800">Check Your Stamps</h2>
                     </div>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={searchState === 'LOADING'}
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white px-4 py-4 rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
-                  >
-                    {searchState === 'LOADING' ? 'Looking up...' : 'Check Balance'}
-                  </button>
-                </form>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Phone Number (e.g., 0123456789)"
+                      className="w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                    {searchState === 'NOT_FOUND' && (
+                      <div className="text-red-600 text-sm text-center font-medium bg-red-50 py-3 rounded-lg">
+                        No profile found for this number at this store.
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={searchState === 'LOADING'}
+                      className="w-full bg-gray-900 hover:bg-gray-800 text-white px-4 py-4 rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
+                    >
+                      {searchState === 'LOADING' ? 'Looking up...' : 'Check Balance'}
+                    </button>
+                  </form>
+
+                  {/* NEW: Registration Section */}
+                  <div className="pt-6 border-t border-gray-100 text-center">
+                    <p className="text-sm text-gray-500 mb-3">Not a member yet?</p>
+                    <Link
+                      href={`/store/${businessId}/register`}
+                      className="block w-full bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-4 rounded-xl font-bold text-lg transition-colors"
+                    >
+                      Register for Rewards
+                    </Link>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h2 className="text-2xl font-bold text-gray-900">Welcome back, {customer?.name}!</h2>
@@ -219,94 +234,96 @@ export default function CustomerCheckPage() {
               )}
             </div>
 
-            {/* --- REVIEW GATE CARD --- */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-              
-              {feedbackStep === 'IDLE' && (
-                <div className="animate-in fade-in">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">How was your experience today?</h3>
-                  <p className="text-sm text-gray-500 mb-6">Tap a star to rate {storeName}</p>
-                  
-                  <div className="flex justify-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => handleStarClick(star)}
-                        onMouseEnter={() => setHoveredRating(star)}
-                        onMouseLeave={() => setHoveredRating(0)}
-                        className="focus:outline-none transition-transform hover:scale-110"
-                      >
-                        <svg 
-                          className={`w-12 h-12 transition-colors duration-200 ${
-                            star <= (hoveredRating || rating) ? 'text-amber-400' : 'text-gray-200'
-                          }`} 
-                          fill="currentColor" 
-                          viewBox="0 0 20 20"
+            {/* --- REVIEW GATE CARD (Only visible if profile is FOUND) --- */}
+            {searchState === 'FOUND' && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center animate-in fade-in slide-in-from-bottom-4">
+                
+                {feedbackStep === 'IDLE' && (
+                  <div className="animate-in fade-in">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">How was your experience today?</h3>
+                    <p className="text-sm text-gray-500 mb-6">Tap a star to rate {storeName}</p>
+                    
+                    <div className="flex justify-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => handleStarClick(star)}
+                          onMouseEnter={() => setHoveredRating(star)}
+                          onMouseLeave={() => setHoveredRating(0)}
+                          className="focus:outline-none transition-transform hover:scale-110"
                         >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      </button>
-                    ))}
+                          <svg 
+                            className={`w-12 h-12 transition-colors duration-200 ${
+                              star <= (hoveredRating || rating) ? 'text-amber-400' : 'text-gray-200'
+                            }`} 
+                            fill="currentColor" 
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {feedbackStep === 'ASK_TEXT' && (
-                <div className="animate-in fade-in slide-in-from-bottom-2">
-                  <h3 className="text-lg font-bold text-gray-800 mb-2">We're sorry to hear that.</h3>
-                  <p className="text-sm text-gray-500 mb-4">How can we improve your experience next time?</p>
-                  <textarea
-                    rows={4}
-                    placeholder="Tell us what went wrong..."
-                    className="w-full rounded-xl border border-gray-300 p-4 text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none resize-none mb-4"
-                    value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
-                  />
-                  <button
-                    onClick={handleTextSubmit}
-                    disabled={isSubmitting || !feedbackText.trim()}
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white px-4 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Sending...' : 'Submit Feedback'}
-                  </button>
-                </div>
-              )}
-
-              {feedbackStep === 'SHOW_GOOGLE' && (
-                <div className="animate-in fade-in zoom-in-95">
-                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">That's wonderful!</h3>
-                  <p className="text-sm text-gray-500 mb-6">As a local business, online reviews mean the world to us. Would you mind sharing your experience on Google?</p>
-                  
-                  {reviewUrl ? (
-                    <a 
-                      href={reviewUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition-colors w-full justify-center shadow-md shadow-blue-200"
+                {feedbackStep === 'ASK_TEXT' && (
+                  <div className="animate-in fade-in slide-in-from-bottom-2">
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">We're sorry to hear that.</h3>
+                    <p className="text-sm text-gray-500 mb-4">How can we improve your experience next time?</p>
+                    <textarea
+                      rows={4}
+                      placeholder="Tell us what went wrong..."
+                      className="w-full rounded-xl border border-gray-300 p-4 text-gray-900 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none resize-none mb-4"
+                      value={feedbackText}
+                      onChange={(e) => setFeedbackText(e.target.value)}
+                    />
+                    <button
+                      onClick={handleTextSubmit}
+                      disabled={isSubmitting || !feedbackText.trim()}
+                      className="w-full bg-gray-900 hover:bg-gray-800 text-white px-4 py-3 rounded-xl font-bold transition-colors disabled:opacity-50"
                     >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
-                      Leave a Google Review
-                    </a>
-                  ) : (
-                    <p className="text-green-600 font-bold bg-green-50 py-3 rounded-lg">Thank you for your rating!</p>
-                  )}
-                </div>
-              )}
-
-              {feedbackStep === 'SUBMITTED' && (
-                <div className="animate-in fade-in zoom-in-95">
-                  <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                      {isSubmitting ? 'Sending...' : 'Submit Feedback'}
+                    </button>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">Thank you!</h3>
-                  <p className="text-gray-500">Your feedback has been sent directly to the store manager. We appreciate you helping us improve.</p>
-                </div>
-              )}
-            </div>
+                )}
+
+                {feedbackStep === 'SHOW_GOOGLE' && (
+                  <div className="animate-in fade-in zoom-in-95">
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">That's wonderful!</h3>
+                    <p className="text-sm text-gray-500 mb-6">As a local business, online reviews mean the world to us. Would you mind sharing your experience on Google?</p>
+                    
+                    {reviewUrl ? (
+                      <a 
+                        href={reviewUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition-colors w-full justify-center shadow-md shadow-blue-200"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
+                        Leave a Google Review
+                      </a>
+                    ) : (
+                      <p className="text-green-600 font-bold bg-green-50 py-3 rounded-lg">Thank you for your rating!</p>
+                    )}
+                  </div>
+                )}
+
+                {feedbackStep === 'SUBMITTED' && (
+                  <div className="animate-in fade-in zoom-in-95">
+                    <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">Thank you!</h3>
+                    <p className="text-gray-500">Your feedback has been sent directly to the store manager. We appreciate you helping us improve.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         ) : null}
       </div>

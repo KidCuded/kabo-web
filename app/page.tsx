@@ -40,7 +40,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/register" className="w-full sm:w-auto text-lg font-bold bg-blue-500 text-white px-8 py-4 rounded-xl hover:bg-blue-400 transition-all transform hover:-translate-y-1 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]">
-                Start Your Free Store
+                Upgrade Your Store
               </Link>
               <Link href="#pricing" className="w-full sm:w-auto text-lg font-bold bg-black/50 backdrop-blur-sm text-white px-8 py-4 rounded-xl hover:bg-gray-800 transition-all border border-gray-700 hover:border-gray-500">
                 View Pricing
