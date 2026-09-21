@@ -5,6 +5,62 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
+import { Star, Coffee, Scissors, Pizza, ShoppingBag, Award, Heart } from 'lucide-react'
+
+// 1. Map string names to actual Lucide React components
+const StampIconMap: Record<string, any> = {
+  star: Star,
+  coffee: Coffee,
+  scissors: Scissors,
+  pizza: Pizza,
+  bag: ShoppingBag,
+  award: Award,
+  heart: Heart,
+}
+
+// 2. Map theme names to secure, pre-compiled Tailwind classes
+const ThemeStyles: Record<string, { bg: string; hoverBg: string; text: string; lightBg: string; border: string; shadow: string }> = {
+  blue: {
+    bg: 'bg-blue-600',
+    hoverBg: 'hover:bg-blue-500',
+    text: 'text-blue-600',
+    lightBg: 'bg-blue-50',
+    border: 'border-blue-100',
+    shadow: 'shadow-blue-200'
+  },
+  emerald: {
+    bg: 'bg-emerald-600',
+    hoverBg: 'hover:bg-emerald-500',
+    text: 'text-emerald-600',
+    lightBg: 'bg-emerald-50',
+    border: 'border-emerald-100',
+    shadow: 'shadow-emerald-200'
+  },
+  rose: {
+    bg: 'bg-rose-600',
+    hoverBg: 'hover:bg-rose-500',
+    text: 'text-rose-600',
+    lightBg: 'bg-rose-50',
+    border: 'border-rose-100',
+    shadow: 'shadow-rose-200'
+  },
+  amber: {
+    bg: 'bg-amber-600',
+    hoverBg: 'hover:bg-amber-500',
+    text: 'text-amber-600',
+    lightBg: 'bg-amber-50',
+    border: 'border-amber-100',
+    shadow: 'shadow-amber-200'
+  },
+  dark: {
+    bg: 'bg-gray-900',
+    hoverBg: 'hover:bg-gray-800',
+    text: 'text-gray-900',
+    lightBg: 'bg-gray-100',
+    border: 'border-gray-200',
+    shadow: 'shadow-gray-200'
+  }
+}
 
 export default function CustomerCheckPage() {
   const params = useParams()
@@ -16,7 +72,11 @@ export default function CustomerCheckPage() {
   const [rewardDesc, setRewardDesc] = useState('Reward')
   const [reviewUrl, setReviewUrl] = useState('')
   
-  // Track if the store is allowed to process customers
+  // Customization State (with sensible defaults)
+  const [themeColor, setThemeColor] = useState('blue')
+  const [stampIconKey, setStampIconKey] = useState('star')
+  const [bgPattern, setBgPattern] = useState('clean')
+
   const [storeStatus, setStoreStatus] = useState<'LOADING' | 'INACTIVE' | 'ACTIVE'>('LOADING')
 
   // Customer Loyalty State
@@ -37,9 +97,10 @@ export default function CustomerCheckPage() {
     async function fetchStoreDetails() {
       if (!businessId) return
 
+      // Fetch customization columns alongside store details
       const { data: bData } = await supabase
         .from('businesses')
-        .select('store_name, google_review_url, subscription_status')
+        .select('store_name, google_review_url, subscription_status, theme_color, stamp_icon, bg_pattern')
         .eq('id', businessId)
         .single()
       
@@ -47,6 +108,11 @@ export default function CustomerCheckPage() {
         setStoreName(bData.store_name)
         if (bData.google_review_url) setReviewUrl(bData.google_review_url)
         setStoreStatus(bData.subscription_status === 'inactive' ? 'INACTIVE' : 'ACTIVE')
+        
+        // Set styles if configured, otherwise defaults will apply
+        if (bData.theme_color) setThemeColor(bData.theme_color)
+        if (bData.stamp_icon) setStampIconKey(bData.stamp_icon)
+        if (bData.bg_pattern) setBgPattern(bData.bg_pattern)
       }
 
       const { data: rData } = await supabase
@@ -90,7 +156,7 @@ export default function CustomerCheckPage() {
       : data.loyalty_balances
 
     setCustomer({
-      id: data.id, // <--- Add this line
+      id: data.id,
       name: data.name || 'Valued Customer',
       stamps: balances?.current_stamps || 0
     })
@@ -115,9 +181,7 @@ export default function CustomerCheckPage() {
   }
 
   const submitToDatabase = async (finalRating: number, text: string) => {
-    // Safety check to ensure we have the customer ID
     if (!customer?.id) return
-
     await supabase.from('reviews').insert([{
       business_id: businessId,
       customer_id: customer.id,
@@ -133,8 +197,19 @@ export default function CustomerCheckPage() {
     setIsSubmitting(false)
   }
 
+  // Resolve active theme and stamp icon components safely
+  const activeTheme = ThemeStyles[themeColor] || ThemeStyles.blue
+  const SelectedStampIcon = StampIconMap[stampIconKey] || Star
+
+  // Dynamic background pattern generator
+  const getBackgroundClass = () => {
+    if (bgPattern === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
+    if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
+    return 'bg-gray-50' // 'clean' default
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 pb-24">
+    <div className={`min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 pb-24 ${getBackgroundClass()}`}>
       
       {/* Header */}
       <div className="text-center mb-10">
@@ -166,7 +241,7 @@ export default function CustomerCheckPage() {
                       type="tel"
                       required
                       placeholder="Phone Number (e.g., 0123456789)"
-                      className="w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                      className={`w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-4 text-gray-900 focus:ring-2 outline-none transition-all`}
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                     />
@@ -178,18 +253,17 @@ export default function CustomerCheckPage() {
                     <button
                       type="submit"
                       disabled={searchState === 'LOADING'}
-                      className="w-full bg-gray-900 hover:bg-gray-800 text-white px-4 py-4 rounded-xl font-bold text-lg transition-colors disabled:opacity-50"
+                      className={`w-full ${activeTheme.bg} ${activeTheme.hoverBg} text-white px-4 py-4 rounded-xl font-bold text-lg transition-colors disabled:opacity-50 shadow-md ${activeTheme.shadow}`}
                     >
                       {searchState === 'LOADING' ? 'Looking up...' : 'Check Balance'}
                     </button>
                   </form>
 
-                  {/* NEW: Registration Section */}
                   <div className="pt-6 border-t border-gray-100 text-center">
                     <p className="text-sm text-gray-500 mb-3">Not a member yet?</p>
                     <Link
                       href={`/store/${businessId}/register`}
-                      className="block w-full bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-4 rounded-xl font-bold text-lg transition-colors"
+                      className={`block w-full ${activeTheme.lightBg} ${activeTheme.text} hover:opacity-80 px-4 py-4 rounded-xl font-bold text-lg transition-colors`}
                     >
                       Register for Rewards
                     </Link>
@@ -200,19 +274,20 @@ export default function CustomerCheckPage() {
                   <h2 className="text-2xl font-bold text-gray-900">Welcome back, {customer?.name}!</h2>
                   <p className="text-gray-500 mt-1 font-medium">{customer?.stamps} / {threshold} Stamps Collected</p>
                   
+                  {/* Stamp Grid using dynamically selected icon */}
                   <div className="flex flex-wrap justify-center gap-3 mt-8 mb-8">
                     {Array.from({ length: threshold }).map((_, index) => {
                       const isStamped = customer && index < customer.stamps;
                       return (
                         <div 
                           key={index} 
-                          className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-sm transition-all duration-500 ${
+                          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-sm transition-all duration-500 ${
                             isStamped 
-                              ? 'bg-blue-600 text-white scale-110 shadow-blue-200' 
+                              ? `${activeTheme.bg} text-white scale-110${activeTheme.shadow}` 
                               : 'bg-gray-100 text-gray-300 border-2 border-dashed border-gray-200'
                           }`}
                         >
-                          {isStamped ? '★' : ''}
+                          {isStamped ? <SelectedStampIcon className="w-6 h-6" /> : ''}
                         </div>
                       )
                     })}
@@ -223,7 +298,7 @@ export default function CustomerCheckPage() {
                       🎉 You earned: {rewardDesc}!
                     </div>
                   ) : (
-                    <div className="bg-blue-50 text-blue-700 py-3 px-4 rounded-xl font-medium text-sm mb-6">
+                    <div className={`${activeTheme.lightBg} ${activeTheme.text} py-3 px-4 rounded-xl font-medium text-sm mb-6`}>
                       Only {customer ? threshold - customer.stamps : ''} more stamps to unlock: {rewardDesc}
                     </div>
                   )}
@@ -234,7 +309,7 @@ export default function CustomerCheckPage() {
               )}
             </div>
 
-            {/* --- REVIEW GATE CARD (Only visible if profile is FOUND) --- */}
+            {/* --- REVIEW GATE CARD --- */}
             {searchState === 'FOUND' && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center animate-in fade-in slide-in-from-bottom-4">
                 
@@ -302,7 +377,7 @@ export default function CustomerCheckPage() {
                         href={reviewUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition-colors w-full justify-center shadow-md shadow-blue-200"
+                        className={`inline-flex items-center gap-2 ${activeTheme.bg} ${activeTheme.hoverBg} text-white px-6 py-4 rounded-xl font-bold transition-colors w-full justify-center shadow-md ${activeTheme.shadow}`}
                       >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
                         Leave a Google Review
