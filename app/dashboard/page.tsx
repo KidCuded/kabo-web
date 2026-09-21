@@ -315,12 +315,13 @@ export default function DashboardPage() {
               </div>
             </div>
             
+            {/* Add Stamps Section */}
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6 max-w-sm mx-auto mb-4">
               <div className="space-y-4">
-
+                <label className="block text-sm font-semibold text-gray-700 text-left mb-1">Stamps to Add</label>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full">
-                  <div className="flex items-center justify-between sm:justify-center bg-white rounded-lg p-1 border border-gray-300 w-full sm:w-auto">
-                    <button 
+                  <div className="flex items-center justify-between sm:justify-center bg-white rounded-lg p-1 border border-gray-300 w-full">
+                    <button // -1 Button
                       type="button"
                       onClick={() => setStampsToAdd(Math.max(1, stampsToAdd - 1))}
                       disabled={stampsToAdd <= 1 || isSubmitting}
@@ -333,10 +334,10 @@ export default function DashboardPage() {
                       min="1"
                       value={stampsToAdd}
                       onChange={(e) => setStampsToAdd(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-full sm:w-16 h-12 sm:h-10 text-center bg-transparent font-bold text-lg sm:text-base text-gray-900 outline-none appearance-none"
+                      className="w-full h-12 sm:h-10 text-center bg-transparent font-bold text-lg sm:text-base text-gray-900 outline-none appearance-none"
                       disabled={isSubmitting}
                     />
-                    <button 
+                    <button // +1 Button
                       type="button"
                       onClick={() => setStampsToAdd(stampsToAdd + 1)}
                       disabled={isSubmitting}
@@ -345,14 +346,6 @@ export default function DashboardPage() {
                       +
                     </button>
                   </div>
-                  
-                  <button 
-                    onClick={handleLogStamp}
-                    disabled={isSubmitting || !amountSpent}
-                    className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-colors shadow-sm disabled:opacity-50 active:scale-95"
-                  >
-                    {isSubmitting ? 'Logging...' : 'Add Stamps'}
-                  </button>
                 </div>
                 {/* Amount Spent Input */}
                 <div>
@@ -369,6 +362,13 @@ export default function DashboardPage() {
                     disabled={isSubmitting}
                   />
                 </div>
+                <button 
+                    onClick={handleLogStamp}
+                    disabled={isSubmitting || !amountSpent}
+                    className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 sm:py-4 rounded-lg font-bold text-base sm:text-lg transition-colors shadow-sm disabled:opacity-50 active:scale-95"
+                  >
+                    {isSubmitting ? 'Logging...' : 'Add Stamps'}
+                  </button>
               </div>
             </div>
 
