@@ -9,7 +9,8 @@ export default function SubscriptionPage() {
   const [trialEndsAt, setTrialEndsAt] = useState<Date | null>(null)
   const [daysLeft, setDaysLeft] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
-  const [isStartingTrial, setIsStartingTrial] = useState(false) // New loading state for the trial button
+  const [isStartingTrial, setIsStartingTrial] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   const supabase = createClient()
 
@@ -40,9 +41,6 @@ export default function SubscriptionPage() {
     fetchSubscription()
   }, [])
 
-  // Start Trial Function
-  // This function will be called when the user clicks the "Start Trial" button.
-  // It updates the subscription status to 'trialing' and sets the trial end date to 14 days from now.
   const startTrial = async () => {
     setIsStartingTrial(true)
     
@@ -50,7 +48,6 @@ export default function SubscriptionPage() {
       const { data: userData } = await supabase.auth.getUser()
       if (!userData.user) throw new Error('Not authenticated')
 
-      // Calculate the date 14 days from now
       const endDate = new Date()
       endDate.setDate(endDate.getDate() + 14)
 
@@ -64,7 +61,6 @@ export default function SubscriptionPage() {
 
       if (error) throw error
 
-      // Update local state to reflect the new trial status immediately
       setStatus('trialing')
       setTrialEndsAt(endDate)
       setDaysLeft(14)
@@ -81,20 +77,16 @@ export default function SubscriptionPage() {
     setIsLoading(true)
     
     try {
-      // 1. Fetch the subscription ID from your Next.js route
       const response = await fetch('/api/curlec/checkout', { method: 'POST' })
       const data = await response.json()
       
       if (!response.ok) throw new Error(data.error)
 
-      // 2. Load the Curlec/Razorpay checkout script dynamically
       const script = document.createElement('script')
       script.src = 'https://checkout.razorpay.com/v1/checkout.js'
       script.onload = () => {
         
-        // 3. Configure the checkout modal
         const options = {
-          // Public Key ID for initializing the inline checkout UI
           key: process.env.NEXT_PUBLIC_CURLEC_KEY_ID, 
           subscription_id: data.subscriptionId,
           name: 'KABO Pro',
@@ -107,7 +99,6 @@ export default function SubscriptionPage() {
           },
         }
 
-        // 4. Open the modal
         const paymentObject = new (window as any).Razorpay(options)
         paymentObject.open()
         setIsLoading(false)
@@ -119,6 +110,30 @@ export default function SubscriptionPage() {
       console.error('Checkout failed:', error)
       alert('Failed to initiate checkout. Please try again.')
       setIsLoading(false)
+    }
+  }
+
+  const handleCancelSubscription = async () => {
+    const confirmCancel = window.confirm(
+      "Are you sure you want to cancel your subscription? Your store will remain active until the end of your current billing cycle, after which it will be deactivated."
+    )
+    if (!confirmCancel) return
+
+    setIsCancelling(true)
+    try {
+      // Calls your backend route to securely communicate the cancellation to Curlec
+      const response = await fetch('/api/curlec/cancel', { method: 'POST' })
+      const data = await response.json()
+
+      if (!response.ok) throw new Error(data.error)
+
+      setStatus('cancelled')
+      alert('Your subscription has been cancelled.')
+    } catch (error: any) {
+      console.error('Cancellation failed:', error)
+      alert(error.message || 'Failed to cancel subscription. Please contact support.')
+    } finally {
+      setIsCancelling(false)
     }
   }
 
@@ -155,7 +170,6 @@ export default function SubscriptionPage() {
                   Setup Mode
                 </div>
                 <p className="text-gray-600 mb-6">Your store is not yet active. Start your 14-day free trial to unlock all features.</p>
-                {/* 1. NEW BUTTON TO START TRIAL */}
                 <button
                   onClick={startTrial}
                   disabled={isStartingTrial}
@@ -172,7 +186,25 @@ export default function SubscriptionPage() {
                   <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                   Pro Plan (Active)
                 </div>
-                <p className="text-gray-600">Your account is active and billing automatically via Curlec.</p>
+                <p className="text-gray-600 mb-6">Your account is active and billing automatically via Curlec.</p>
+                
+                <button
+                  onClick={handleCancelSubscription}
+                  disabled={isCancelling}
+                  className="text-red-600 hover:text-red-700 font-semibold text-sm transition-colors disabled:opacity-50"
+                >
+                  {isCancelling ? 'Processing...' : 'Cancel Subscription'}
+                </button>
+              </div>
+            )}
+
+            {status === 'cancelled' && (
+              <div>
+                <div className="inline-flex items-center gap-2 bg-red-50 text-red-700 px-3 py-1 rounded-full text-sm font-bold mb-4">
+                  <span className="w-2 h-2 bg-red-600 rounded-full"></span>
+                  Cancelled
+                </div>
+                <p className="text-gray-600 mb-6">Your subscription has been cancelled. You will not be billed again, and your portal will deactivate at the end of the billing cycle.</p>
               </div>
             )}
           </div>
