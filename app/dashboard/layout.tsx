@@ -120,6 +120,11 @@ export default async function DashboardLayout({
               Settings
             </label>
           </Link>
+          <Link href="/dashboard/customization" className="block w-full">
+            <label htmlFor="mobile-sidebar" className="block px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white font-medium transition-colors cursor-pointer">
+              Customization 
+            </label>
+          </Link>
           <Link href="/dashboard/qr-code" className="block w-full">
             <label htmlFor="mobile-sidebar" className="block px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white font-medium transition-colors cursor-pointer">
               QR Code

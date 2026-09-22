@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { Star, Coffee, Scissors, Pizza, ShoppingBag, Award, Heart } from 'lucide-react'
 
 export default function SettingsPage() {
   // Store Profile State
@@ -15,11 +14,6 @@ export default function SettingsPage() {
   const [stampThreshold, setStampThreshold] = useState<number | ''>(10)
   const [rewardDescription, setRewardDescription] = useState('')
   const [googleReviewUrl, setGoogleReviewUrl] = useState('') 
-  
-  // Portal Customization State
-  const [themeColor, setThemeColor] = useState('blue')
-  const [stampIcon, setStampIcon] = useState('star')
-  const [bgPattern, setBgPattern] = useState('clean')
   
   // UI State
   const [isLoading, setIsLoading] = useState(true)
@@ -37,7 +31,7 @@ export default function SettingsPage() {
 
         const { data: businessData } = await supabase
           .from('businesses')
-          .select('id, store_name, google_review_url, contact_number, address, theme_color, stamp_icon, bg_pattern')
+          .select('id, store_name, google_review_url, contact_number, address')
           .eq('auth_user_id', userData.user.id)
           .single()
 
@@ -46,10 +40,6 @@ export default function SettingsPage() {
           if (businessData.google_review_url) setGoogleReviewUrl(businessData.google_review_url)
           if (businessData.contact_number) setContactNumber(businessData.contact_number)
           if (businessData.address) setAddress(businessData.address)
-          
-          if (businessData.theme_color) setThemeColor(businessData.theme_color)
-          if (businessData.stamp_icon) setStampIcon(businessData.stamp_icon)
-          if (businessData.bg_pattern) setBgPattern(businessData.bg_pattern)
 
           const { data: ruleData } = await supabase
             .from('loyalty_rules')
@@ -70,7 +60,7 @@ export default function SettingsPage() {
     }
 
     fetchSettings()
-  }, [])
+  }, [supabase])
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -107,16 +97,13 @@ export default function SettingsPage() {
 
       if (upsertError) throw new Error('Failed to update loyalty rules.')
 
-      // 2. Save the Store Profile, Integrations, and Customization
+      // 2. Save the Store Profile & Integrations
       const { error: businessUpdateError } = await supabase
         .from('businesses')
         .update({ 
           google_review_url: googleReviewUrl,
           contact_number: contactNumber,
-          address: address,
-          theme_color: themeColor,
-          stamp_icon: stampIcon,
-          bg_pattern: bgPattern
+          address: address
         })
         .eq('id', businessData.id)
 
@@ -166,9 +153,7 @@ export default function SettingsPage() {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Store Name
-                  </label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Store Name</label>
                   <input
                     type="text"
                     disabled
@@ -179,9 +164,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Contact Number
-                  </label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Contact Number</label>
                   <input
                     type="tel"
                     placeholder="e.g., 03-12345678"
@@ -192,9 +175,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Physical Address
-                  </label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Physical Address</label>
                   <textarea
                     rows={3}
                     placeholder="Enter the store's full address..."
@@ -215,9 +196,7 @@ export default function SettingsPage() {
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Stamps Required for Reward
-                  </label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Stamps Required for Reward</label>
                   <input
                     type="number"
                     min="1"
@@ -230,9 +209,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Reward Description
-                  </label>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Reward Description</label>
                   <input
                     type="text"
                     required
@@ -246,104 +223,7 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            {/* --- CARD 3: PORTAL CUSTOMIZATION --- */}
-            <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
-              <div className="mb-8 border-b border-gray-100 pb-4 flex items-center gap-2">
-                <h3 className="text-xl font-bold text-gray-900">Portal Customization</h3>
-                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-md ml-2">New</span>
-              </div>
-              
-              <div className="space-y-8">
-                
-                {/* Theme Color Selection */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Theme Color
-                  </label>
-                  <div className="flex flex-wrap gap-4">
-                    {[
-                      { id: 'blue', class: 'bg-blue-600' },
-                      { id: 'emerald', class: 'bg-emerald-600' },
-                      { id: 'rose', class: 'bg-rose-600' },
-                      { id: 'amber', class: 'bg-amber-600' },
-                      { id: 'dark', class: 'bg-gray-900' },
-                    ].map((color) => (
-                      <button
-                        key={color.id}
-                        type="button"
-                        onClick={() => setThemeColor(color.id)}
-                        className={`w-12 h-12 rounded-full ${color.class} flex items-center justify-center transition-all ${
-                          themeColor === color.id 
-                            ? 'ring-4 ring-offset-2 ring-blue-500 scale-110' 
-                            : 'ring-1 ring-gray-200 hover:scale-105'
-                        }`}
-                      >
-                        {themeColor === color.id && (
-                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-500 mt-3">Sets the primary color for buttons and highlights on your customer page.</p>
-                </div>
-
-                {/* Stamp Icon Selection */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Stamp Icon
-                  </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3">
-                    {[
-                      { id: 'star', Icon: Star },
-                      { id: 'coffee', Icon: Coffee },
-                      { id: 'scissors', Icon: Scissors },
-                      { id: 'pizza', Icon: Pizza },
-                      { id: 'bag', Icon: ShoppingBag },
-                      { id: 'award', Icon: Award },
-                      { id: 'heart', Icon: Heart },
-                    ].map((stamp) => {
-                      const Icon = stamp.Icon
-                      return (
-                        <button
-                          key={stamp.id}
-                          type="button"
-                          onClick={() => setStampIcon(stamp.id)}
-                          className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                            stampIcon === stamp.id 
-                              ? 'border-blue-600 bg-blue-50 text-blue-600' 
-                              : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <Icon className="w-7 h-7" />
-                          <span className="text-[11px] font-semibold capitalize">{stamp.id}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Background Pattern Selection */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-3">
-                    Background Pattern
-                  </label>
-                  <select
-                    value={bgPattern}
-                    onChange={(e) => setBgPattern(e.target.value)}
-                    className="w-full md:w-1/2 rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors bg-white"
-                  >
-                    <option value="clean">Clean (Solid Light Gray)</option>
-                    <option value="dots">Dots Pattern</option>
-                    <option value="grid">Grid Pattern</option>
-                  </select>
-                </div>
-
-              </div>
-            </section>
-
-            {/* --- CARD 4: INTEGRATIONS --- */}
+            {/* --- CARD 3: INTEGRATIONS --- */}
             <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
               <div className="mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">
                 <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
@@ -351,9 +231,7 @@ export default function SettingsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
-                  Review Link (Optional)
-                </label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">Review Link (Optional)</label>
                 <input
                   type="url"
                   placeholder="https://g.page/r/..."
@@ -365,7 +243,6 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            {/* SAVE ACTIONS */}
             <div className="pt-4 flex justify-end">
               <button
                 type="submit"

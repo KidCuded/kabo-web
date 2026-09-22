@@ -18,48 +18,16 @@ const StampIconMap: Record<string, any> = {
   heart: Heart,
 }
 
-// 2. Map theme names to secure, pre-compiled Tailwind classes
-const ThemeStyles: Record<string, { bg: string; hoverBg: string; text: string; lightBg: string; border: string; shadow: string }> = {
-  blue: {
-    bg: 'bg-blue-600',
-    hoverBg: 'hover:bg-blue-500',
-    text: 'text-blue-600',
-    lightBg: 'bg-blue-50',
-    border: 'border-blue-100',
-    shadow: 'shadow-blue-200'
-  },
-  emerald: {
-    bg: 'bg-emerald-600',
-    hoverBg: 'hover:bg-emerald-500',
-    text: 'text-emerald-600',
-    lightBg: 'bg-emerald-50',
-    border: 'border-emerald-100',
-    shadow: 'shadow-emerald-200'
-  },
-  rose: {
-    bg: 'bg-rose-600',
-    hoverBg: 'hover:bg-rose-500',
-    text: 'text-rose-600',
-    lightBg: 'bg-rose-50',
-    border: 'border-rose-100',
-    shadow: 'shadow-rose-200'
-  },
-  amber: {
-    bg: 'bg-amber-600',
-    hoverBg: 'hover:bg-amber-500',
-    text: 'text-amber-600',
-    lightBg: 'bg-amber-50',
-    border: 'border-amber-100',
-    shadow: 'shadow-amber-200'
-  },
-  dark: {
-    bg: 'bg-gray-900',
-    hoverBg: 'hover:bg-gray-800',
-    text: 'text-gray-900',
-    lightBg: 'bg-gray-100',
-    border: 'border-gray-200',
-    shadow: 'shadow-gray-200'
-  }
+// 2. Expanded Theme Dictionary
+const ThemeStyles: Record<string, { bg: string; hoverBg: string; text: string; lightBg: string; border: string; shadow: string; iconBg: string; iconText: string }> = {
+  blue: { bg: 'bg-blue-600', hoverBg: 'hover:bg-blue-500', text: 'text-blue-600', lightBg: 'bg-blue-50', border: 'border-blue-100', shadow: 'shadow-blue-200', iconBg: 'bg-blue-500/10', iconText: 'text-blue-600' },
+  emerald: { bg: 'bg-emerald-600', hoverBg: 'hover:bg-emerald-500', text: 'text-emerald-600', lightBg: 'bg-emerald-50', border: 'border-emerald-100', shadow: 'shadow-emerald-200', iconBg: 'bg-emerald-500/10', iconText: 'text-emerald-600' },
+  rose: { bg: 'bg-rose-600', hoverBg: 'hover:bg-rose-500', text: 'text-rose-600', lightBg: 'bg-rose-50', border: 'border-rose-100', shadow: 'shadow-rose-200', iconBg: 'bg-rose-500/10', iconText: 'text-rose-600' },
+  amber: { bg: 'bg-amber-600', hoverBg: 'hover:bg-amber-500', text: 'text-amber-600', lightBg: 'bg-amber-50', border: 'border-amber-100', shadow: 'shadow-amber-200', iconBg: 'bg-amber-500/10', iconText: 'text-amber-600' },
+  dark: { bg: 'bg-gray-900', hoverBg: 'hover:bg-gray-800', text: 'text-gray-900', lightBg: 'bg-gray-100', border: 'border-gray-200', shadow: 'shadow-gray-200', iconBg: 'bg-gray-200', iconText: 'text-gray-900' },
+  violet: { bg: 'bg-violet-600', hoverBg: 'hover:bg-violet-500', text: 'text-violet-600', lightBg: 'bg-violet-50', border: 'border-violet-100', shadow: 'shadow-violet-200', iconBg: 'bg-violet-500/10', iconText: 'text-violet-600' },
+  cyan: { bg: 'bg-cyan-600', hoverBg: 'hover:bg-cyan-500', text: 'text-cyan-600', lightBg: 'bg-cyan-50', border: 'border-cyan-100', shadow: 'shadow-cyan-200', iconBg: 'bg-cyan-500/10', iconText: 'text-cyan-600' },
+  orange: { bg: 'bg-orange-600', hoverBg: 'hover:bg-orange-500', text: 'text-orange-600', lightBg: 'bg-orange-50', border: 'border-orange-100', shadow: 'shadow-orange-200', iconBg: 'bg-orange-500/10', iconText: 'text-orange-600' },
 }
 
 export default function CustomerCheckPage() {
@@ -72,10 +40,11 @@ export default function CustomerCheckPage() {
   const [rewardDesc, setRewardDesc] = useState('Reward')
   const [reviewUrl, setReviewUrl] = useState('')
   
-  // Customization State (with sensible defaults)
+  // Customization State
   const [themeColor, setThemeColor] = useState('blue')
   const [stampIconKey, setStampIconKey] = useState('star')
   const [bgPattern, setBgPattern] = useState('clean')
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   const [storeStatus, setStoreStatus] = useState<'LOADING' | 'INACTIVE' | 'ACTIVE'>('LOADING')
 
@@ -97,10 +66,9 @@ export default function CustomerCheckPage() {
     async function fetchStoreDetails() {
       if (!businessId) return
 
-      // Fetch customization columns alongside store details
       const { data: bData } = await supabase
         .from('businesses')
-        .select('store_name, google_review_url, subscription_status, theme_color, stamp_icon, bg_pattern')
+        .select('store_name, google_review_url, subscription_status, theme_color, stamp_icon, bg_pattern, logo_url')
         .eq('id', businessId)
         .single()
       
@@ -109,10 +77,10 @@ export default function CustomerCheckPage() {
         if (bData.google_review_url) setReviewUrl(bData.google_review_url)
         setStoreStatus(bData.subscription_status === 'inactive' ? 'INACTIVE' : 'ACTIVE')
         
-        // Set styles if configured, otherwise defaults will apply
         if (bData.theme_color) setThemeColor(bData.theme_color)
         if (bData.stamp_icon) setStampIconKey(bData.stamp_icon)
         if (bData.bg_pattern) setBgPattern(bData.bg_pattern)
+        if (bData.logo_url) setLogoUrl(bData.logo_url)
       }
 
       const { data: rData } = await supabase
@@ -201,7 +169,7 @@ export default function CustomerCheckPage() {
   const activeTheme = ThemeStyles[themeColor] || ThemeStyles.blue
   const SelectedStampIcon = StampIconMap[stampIconKey] || Star
 
-  // Dynamic background pattern generator
+  // Expanded background pattern generator for light mode checkout screen
   const getBackgroundClass = () => {
     if (bgPattern === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
     if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
@@ -209,10 +177,21 @@ export default function CustomerCheckPage() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 pb-24 ${getBackgroundClass()}`}>
+    <div className={`min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 pb-24 transition-colors duration-300 ${getBackgroundClass()}`}>
       
-      {/* Header */}
-      <div className="text-center mb-10">
+      {/* Header with Custom Logo Support */}
+      <div className="text-center mb-10 flex flex-col items-center">
+        {logoUrl ? (
+          <img 
+            src={logoUrl} 
+            alt={storeName} 
+            className="w-24 h-24 object-contain rounded-2xl mb-4 shadow-sm bg-white p-2" 
+          />
+        ) : (
+          <div className={`w-20 h-20 ${activeTheme.iconBg} ${activeTheme.iconText} rounded-3xl flex items-center justify-center mb-4 shadow-sm`}>
+            <span className="font-black text-4xl">{(storeName || 'K').charAt(0).toUpperCase()}</span>
+          </div>
+        )}
         <h1 className="text-4xl font-black text-gray-900 tracking-tight">{storeName}</h1>
         <p className="text-gray-500 mt-2 font-medium">Customer Loyalty Portal</p>
       </div>
