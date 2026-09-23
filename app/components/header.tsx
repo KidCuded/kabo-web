@@ -30,7 +30,7 @@ export default function Header() {
                 <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
                     <span className="text-white font-black text-xl leading-none">K</span>
                 </div>
-                <Link href="/" className="text-2xl font-black text-white tracking-tight">
+                <Link href="/" className="text-2xl font-black text-white tracking-tight transition-all duration-300 transform hover:translate-x-2 duration-300">
                     KABO
                 </Link>
             </div>

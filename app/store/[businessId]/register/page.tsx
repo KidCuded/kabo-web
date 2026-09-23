@@ -123,10 +123,10 @@ export default function CustomerRegistration() {
               <span className="font-black text-3xl">{(storeName || 'K').charAt(0).toUpperCase()}</span>
             </div>
           )}
-          <h1 className="text-sm font-bold text-white uppercase tracking-widest mb-2 text-center">
+          <h1 className="text-sm font-bold text-black uppercase tracking-widest mb-2 text-center">
             {storeName}
           </h1>
-          <p className="text-sm text-gray-400 text-center">
+          <p className="text-sm text-gray-700 text-center">
             Sign up to join this business's loyalty program
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function CustomerRegistration() {
         <form onSubmit={handleSubmit} className="space-y-6">
           
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Full name <span className="text-red-500">*</span>
             </label>
             <input 
@@ -152,7 +152,7 @@ export default function CustomerRegistration() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Email <span className="text-red-500">*</span>
             </label>
             <input 
@@ -164,7 +164,7 @@ export default function CustomerRegistration() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Date of Birth (Optional)
             </label>
             <input 
@@ -175,7 +175,7 @@ export default function CustomerRegistration() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number <span className="text-red-500">*</span>
             </label>
             <input 
