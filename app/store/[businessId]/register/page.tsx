@@ -78,17 +78,17 @@ export default function CustomerRegistration() {
   // Resolve dynamic branding styles
   const activeTheme = ThemeStyles[themeColor] || ThemeStyles.blue
   
-  // Dark mode optimized patterns
+  // Patterns
   const getBackgroundClass = () => {
-    if (bgPattern === 'dots') return 'bg-[radial-gradient(#1f2937_1px,transparent_1px)] [background-size:16px_16px] bg-[#050505]'
-    if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:24px_24px] bg-[#050505]'
-    return 'bg-black' // 'clean' default
+    if (bgPattern === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
+    if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
+    return 'bg-gray-50' // 'clean' default
   }
 
   if (status?.success) {
     return (
       <div className={`min-h-screen ${getBackgroundClass()} flex items-center justify-center p-4 font-sans transition-colors duration-300`}>
-        <div className="bg-[#111318] border border-gray-800/80 rounded-3xl p-10 text-center max-w-md w-full shadow-2xl">
+        <div className="bg-white border border-gray-800/80 rounded-3xl p-10 text-center max-w-md w-full shadow-2xl">
           <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
@@ -108,7 +108,7 @@ export default function CustomerRegistration() {
   return (
     <div className={`min-h-screen ${getBackgroundClass()} flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300`}>
       
-      <div className="bg-[#111318] border border-gray-800/80 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-2xl relative">
+      <div className="bg-white border border-gray-100 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-2xl relative">
         
         {/* Dynamic Header & Logo */}
         <div className="flex flex-col items-center mb-8">
@@ -147,7 +147,7 @@ export default function CustomerRegistration() {
               required 
               type="text" 
               name="name" 
-              className="w-full bg-[#0a0c10] border border-gray-800 rounded-xl px-4 py-2 text-white text-base focus:border-blue-500 focus:outline-none transition-colors" 
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-white text-base focus:border-blue-500 focus:outline-none transition-colors" 
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function CustomerRegistration() {
               required 
               type="email" 
               name="email" 
-              className="w-full bg-[#0a0c10] border border-gray-800 rounded-xl px-4 py-2 text-white text-base focus:border-blue-500 focus:outline-none transition-colors" 
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-white text-base focus:border-blue-500 focus:outline-none transition-colors" 
             />
           </div>
 
@@ -170,7 +170,7 @@ export default function CustomerRegistration() {
             <input 
               type="date" 
               name="date_of_birth" 
-              className="w-full bg-[#0a0c10] border border-gray-800 rounded-xl px-4 py-2 text-gray-300 text-base focus:text-white focus:border-blue-500 focus:outline-none transition-colors" 
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-gray-300 text-base focus:text-white focus:border-blue-500 focus:outline-none transition-colors" 
             />
           </div>
 
@@ -183,7 +183,7 @@ export default function CustomerRegistration() {
               type="tel" 
               name="phone_number"
               placeholder="0123456789"
-              className="w-full bg-[#0a0c10] border border-gray-800 rounded-xl px-4 py-2 text-white text-base focus:border-blue-500 focus:outline-none transition-colors placeholder:text-gray-600" 
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-white text-base focus:border-blue-500 focus:outline-none transition-colors placeholder:text-gray-300" 
             />
           </div>
 

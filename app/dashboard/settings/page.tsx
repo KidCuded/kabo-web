@@ -200,6 +200,7 @@ export default function SettingsPage() {
                   <input
                     type="number"
                     min="1"
+                    max="20"
                     required
                     className="w-full md:w-1/3 rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
                     value={stampThreshold}
