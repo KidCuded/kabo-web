@@ -1,7 +1,6 @@
 // app/api/wallet/generate/route.ts
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +12,19 @@ export async function POST(request: Request) {
 
     const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+    
+    // --- ROBUST PRIVATE KEY PARSING ---
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY || ''
+    
+    // 1. Strip surrounding quotes if your .env file or hosting provider added them literally
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.slice(1, -1)
+    } else if (privateKey.startsWith("'") && privateKey.endsWith("'")) {
+      privateKey = privateKey.slice(1, -1)
+    }
+    
+    // 2. Convert literal "\n" text into actual structural line breaks
+    privateKey = privateKey.replace(/\\n/g, '\n')
 
     if (!issuerId || !clientEmail || !privateKey) {
       throw new Error('Missing Google Wallet credentials')
@@ -29,7 +40,7 @@ export async function POST(request: Request) {
       aud: 'google',
       typ: 'savetowallet',
       iat: Math.floor(Date.now() / 1000),
-      origins: [], // Leave empty to allow saving from any origin/app
+      origins: [], 
       payload: {
         loyaltyObjects: [
           {
@@ -40,11 +51,11 @@ export async function POST(request: Request) {
             accountName: customerName,
             barcode: {
               type: 'qrCode',
-              value: phoneNumber, // This is what your scanner will read
+              value: phoneNumber, // This is what the merchant will scan
               alternateText: phoneNumber
             },
             loyaltyPoints: {
-              balance: { int: 0 }, // Starts at 0 upon registration
+              balance: { int: 0 }, // Starts at 0 stamps
               label: 'Stamps'
             }
           }
@@ -52,7 +63,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Sign the JWT with your Google Private Key
+    // Sign the JWT with the properly formatted Private Key
     const token = jwt.sign(claims, privateKey, { algorithm: 'RS256' })
     
     // Construct the final actionable URL
