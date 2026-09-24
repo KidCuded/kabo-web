@@ -40,7 +40,6 @@ export async function POST(request: Request) {
       aud: 'google',
       typ: 'savetowallet',
       iat: Math.floor(Date.now() / 1000),
-      origins: [], 
       payload: {
         loyaltyObjects: [
           {
@@ -55,7 +54,7 @@ export async function POST(request: Request) {
               alternateText: phoneNumber
             },
             loyaltyPoints: {
-              balance: { int: 0 }, // Starts at 0 stamps
+              balance: { int: 0 }, 
               label: 'Stamps'
             }
           }
