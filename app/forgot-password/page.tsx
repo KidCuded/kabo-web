@@ -1,3 +1,4 @@
+// app/forgot-password/page.tsx
 'use client'
 
 import { useState } from 'react'
@@ -17,8 +18,8 @@ export default function ForgotPasswordPage() {
     setMessage('')
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // This is where Supabase will send them after they click the email link
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/update-password`,
+      // Safely captures http://localhost:3000 locally or https://www.kabo.my in production
+      redirectTo: `${window.location.origin}/update-password`,
     })
 
     if (error) {

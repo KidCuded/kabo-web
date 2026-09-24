@@ -60,6 +60,10 @@ export default function CustomerCheckPage() {
   const [feedbackStep, setFeedbackStep] = useState<'IDLE' | 'ASK_TEXT' | 'SHOW_GOOGLE' | 'SUBMITTED'>('IDLE')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Google Wallet Pass Generation State
+  const [walletUrl, setWalletUrl] = useState<string | null>(null)
+  const [isGeneratingPass, setIsGeneratingPass] = useState(false)
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -96,6 +100,36 @@ export default function CustomerCheckPage() {
     }
     fetchStoreDetails()
   }, [businessId])
+
+  const handleGenerateWalletPass = async () => {
+  if (!customer) return
+  setIsGeneratingPass(true)
+  
+  try {
+    const response = await fetch('/api/wallet/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessId: businessId,
+        customerId: customer.id,
+        customerName: customer.name,
+        currentStamps: customer.stamps
+      })
+    })
+    
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error)
+    
+    // Natively redirect the user to Google Wallet's save screen
+    window.location.href = data.saveUrl
+    
+  } catch (error) {
+    console.error('Pass generation failed:', error)
+    alert('Failed to generate your digital card. Please try again.')
+  } finally {
+    setIsGeneratingPass(false)
+  }
+}
 
   const handleCheckStamps = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -137,6 +137,17 @@ export default function CustomizationPage() {
           logo_url: logoUrl
         })
         .eq('id', businessData.id)
+        
+      await fetch('/api/wallet/class', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: businessData.id,
+          storeName: storeName, // Ensure storeName is in your state variables
+          logoUrl: logoUrl,
+          passBackgroundColor: passBackgroundColor
+        })
+      })
 
       if (businessUpdateError) throw new Error('Failed to save customization settings.')
 

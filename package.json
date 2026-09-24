@@ -11,6 +11,8 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
+    "google-auth-library": "^11.1.0",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.47.0",
     "next": "16.3.2",
     "ogl": "^1.0.11",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
