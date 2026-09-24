@@ -13,7 +13,7 @@ export default function DashboardPage() {
   
   const [customer, setCustomer] = useState<{ id: string; name: string; stamps: number; phone: string; totalSpent: number } | null>(null)
   const [stampsToAdd, setStampsToAdd] = useState<number>(1)
-  const [amountSpent, setAmountSpent] = useState<string>('') // New state for checkout amount
+  const [amountSpent, setAmountSpent] = useState<string>('') 
   
   const [newCustomerName, setNewCustomerName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,18 +48,19 @@ export default function DashboardPage() {
       }
     }
     fetchBusiness()
-  }, [])
+  }, [supabase])
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!phoneNumber.trim() || !businessId) return
+  const handleSearch = async (e?: React.FormEvent, phoneOverride?: string) => {
+    if (e) e.preventDefault()
+    const targetPhone = phoneOverride || phoneNumber
+    if (!targetPhone.trim() || !businessId) return
     
     setSearchState('LOADING')
     setCustomer(null)
     setStampsToAdd(1) 
     setAmountSpent('')
     setErrorMsg('')
-    setSearchedPhone(phoneNumber)
+    setSearchedPhone(targetPhone)
 
     const { data, error } = await supabase
       .from('customers')
@@ -70,7 +71,7 @@ export default function DashboardPage() {
         total_spent,
         loyalty_balances!inner ( current_stamps )
       `)
-      .eq('phone_number', phoneNumber)
+      .eq('phone_number', targetPhone)
       .eq('loyalty_balances.business_id', businessId)
       .single()
 
@@ -90,6 +91,17 @@ export default function DashboardPage() {
     })
     
     setSearchState('FOUND')
+  }
+
+  // --- QR SCANNER INTEGRATION (Triggers phone camera / barcode read) ---
+  const handleScanQR = () => {
+    // If your POS device has an attached USB barcode scanner, it acts as a keyboard and types into the active input.
+    // For mobile/tablet cameras, this triggers an input prompt or you can attach a web scanner library.
+    const scannedPhone = prompt("Scan Customer QR or enter phone number extracted from pass:")
+    if (scannedPhone) {
+      setPhoneNumber(scannedPhone)
+      handleSearch(undefined, scannedPhone)
+    }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -164,7 +176,7 @@ export default function DashboardPage() {
     setErrorMsg('')
 
     try {
-      // 1. Log the transaction with the amount spent
+      // 1. Log the transaction
       const { error: logError } = await supabase
         .from('transactions_log')
         .insert([{
@@ -177,7 +189,7 @@ export default function DashboardPage() {
 
       if (logError) throw new Error('Failed to log transaction record.')
 
-      // 2. Update the stamp balance
+      // 2. Update the stamp balance in database
       const newStampCount = customer.stamps + stampsToAdd 
       const { error: updateError } = await supabase
         .from('loyalty_balances')
@@ -187,7 +199,7 @@ export default function DashboardPage() {
 
       if (updateError) throw new Error('Failed to update current stamp total.')
 
-      // 3. Update the customer's total spent
+      // 3. Update customer's total spent
       const newTotalSpent = customer.totalSpent + spendValue
       const { error: customerError } = await supabase
         .from('customers')
@@ -195,6 +207,21 @@ export default function DashboardPage() {
         .eq('id', customer.id)
         
       if (customerError) throw new Error('Failed to update customer lifetime spending.')
+
+      // 4. --- SYNC WITH GOOGLE WALLET ---
+      try {
+        await fetch('/api/wallet/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: businessId,
+            phoneNumber: customer.phone,
+            newStampCount: newStampCount
+          })
+        })
+      } catch (walletErr) {
+        console.error("Google Wallet sync skipped/failed:", walletErr)
+      }
 
       // Update UI state
       setCustomer({ ...customer, stamps: newStampCount, totalSpent: newTotalSpent })
@@ -220,7 +247,6 @@ export default function DashboardPage() {
     try {
       const stampsToDeduct = stampThreshold 
 
-      // Note: amount_spent is intentionally omitted (null) for redemptions
       const { error: logError } = await supabase
         .from('transactions_log')
         .insert([{
@@ -240,6 +266,21 @@ export default function DashboardPage() {
         .eq('business_id', businessId)
 
       if (updateError) throw new Error('Failed to deduct stamps.')
+
+      // Sync deduction with Google Wallet
+      try {
+        await fetch('/api/wallet/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: businessId,
+            phoneNumber: customer.phone,
+            newStampCount: newStampCount
+          })
+        })
+      } catch (walletErr) {
+        console.error("Google Wallet sync skipped/failed:", walletErr)
+      }
 
       setCustomer({ ...customer, stamps: newStampCount })
       
@@ -285,13 +326,39 @@ export default function DashboardPage() {
                 if (searchState === 'NOT_FOUND') setSearchState('IDLE') 
               }}
             />
-            <button
-              type="submit"
-              disabled={searchState === 'LOADING'}
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition-colors disabled:opacity-50"
-            >
-              {searchState === 'LOADING' ? 'Searching...' : 'Search'}
-            </button>
+            
+            <div className="flex gap-3 sm:gap-4 w-full sm:w-auto">
+              {/* Scan QR Button */}
+              <button
+                type="button"
+                onClick={handleScanQR}
+                className="flex items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-700 px-4 py-3 sm:py-4 rounded-lg font-semibold transition-colors border border-gray-300 shadow-sm shrink-0"
+                title="Scan QR Code"
+              >
+                <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="5" height="5" rx="1" />
+                  <rect x="16" y="3" width="5" height="5" rx="1" />
+                  <rect x="3" y="16" width="5" height="5" rx="1" />
+                  <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+                  <path d="M21 21v.01" />
+                  <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+                  <path d="M3 12h.01" />
+                  <path d="M12 3h.01" />
+                  <path d="M12 16v.01" />
+                  <path d="M16 12h1" />
+                  <path d="M21 12v.01" />
+                  <path d="M12 21v-1" />
+                </svg>
+              </button>
+
+              <button
+                type="submit"
+                disabled={searchState === 'LOADING'}
+                className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 sm:py-4 rounded-lg font-semibold text-base sm:text-lg transition-colors disabled:opacity-50"
+              >
+                {searchState === 'LOADING' ? 'Searching...' : 'Search'}
+              </button>
+            </div>
           </form>
         </div>
 
