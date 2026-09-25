@@ -39,7 +39,8 @@ export default function CustomerRegistration() {
   const [storeName, setStoreName] = useState('Kabo Loyalty Programs')
   const [themeColor, setThemeColor] = useState('blue')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [bgPattern, setBgPattern] = useState('clean')
+  const [portalBgType, setPortalBgType] = useState<'color' | 'pattern' | 'image'>('color')
+  const [portalBgValue, setPortalBgValue] = useState('#f9fafb')
 
   useEffect(() => {
     async function fetchBranding() {
@@ -47,15 +48,16 @@ export default function CustomerRegistration() {
       
       const { data } = await supabase
         .from('businesses')
-        .select('store_name, theme_color, bg_pattern, logo_url')
+        .select('store_name, theme_color, portal_bg_type, portal_bg_value, logo_url')
         .eq('id', businessId)
         .single()
       
       if (data) {
         if (data.store_name) setStoreName(data.store_name)
         if (data.theme_color) setThemeColor(data.theme_color)
-        if (data.bg_pattern) setBgPattern(data.bg_pattern)
         if (data.logo_url) setLogoUrl(data.logo_url)
+        if (data.portal_bg_type) setPortalBgType(data.portal_bg_type as 'color' | 'pattern' | 'image')
+        if (data.portal_bg_value) setPortalBgValue(data.portal_bg_value)
       }
     }
     fetchBranding()
@@ -124,17 +126,35 @@ export default function CustomerRegistration() {
   // Resolve dynamic branding styles
   const activeTheme = ThemeStyles[themeColor] || ThemeStyles.blue
   
-  // Patterns (Light Mode)
-  const getBackgroundClass = () => {
-    if (bgPattern === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
-    if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
-    return 'bg-gray-50' // 'clean' default
+  // Dynamic Background Resolvers
+  const getPortalBackgroundStyle = () => {
+    if (portalBgType === 'image' && portalBgValue) {
+      return {
+        backgroundImage: `url(${portalBgValue})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }
+    }
+    if (portalBgType === 'color') return { backgroundColor: portalBgValue }
+    return {} 
+  }
+
+  const getPortalPatternClass = () => {
+    if (portalBgType === 'pattern') {
+      if (portalBgValue === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
+      if (portalBgValue === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
+    }
+    return 'bg-gray-50' // Fallback
   }
 
   if (status?.success) {
     return (
-      <div className={`min-h-screen ${getBackgroundClass()} flex items-center justify-center p-4 font-sans transition-colors duration-300`}>
-        <div className="bg-white border border-gray-100 rounded-3xl p-10 text-center max-w-md w-full shadow-xl">
+      <div 
+        className={`min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-300 ${getPortalPatternClass()}`}
+        style={getPortalBackgroundStyle()}
+      >
+        <div className="bg-white/95 backdrop-blur-md border border-gray-100 rounded-3xl p-10 text-center max-w-md w-full shadow-xl">
           <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
@@ -183,9 +203,12 @@ export default function CustomerRegistration() {
   }
 
   return (
-    <div className={`min-h-screen ${getBackgroundClass()} flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300`}>
+    <div 
+      className={`min-h-screen flex flex-col items-center justify-center p-4 font-sans transition-colors duration-300 ${getPortalPatternClass()}`}
+      style={getPortalBackgroundStyle()}
+    >
       
-      <div className="bg-white border border-gray-100 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-xl relative">
+      <div className="bg-white/95 backdrop-blur-md border border-gray-100 rounded-3xl p-8 sm:p-10 max-w-md w-full shadow-xl relative">
         
         {/* Dynamic Header & Logo */}
         <div className="flex flex-col items-center mb-8">
@@ -193,7 +216,7 @@ export default function CustomerRegistration() {
             <img 
               src={logoUrl} 
               alt={storeName} 
-              className="w-16 h-16 object-contain rounded-xl mb-5 shadow-sm border border-gray-100" 
+              className="w-16 h-16 object-contain rounded-xl mb-5 shadow-sm border border-gray-100 bg-white" 
             />
           ) : (
             <div className={`w-14 h-14 ${activeTheme.iconBg} ${activeTheme.iconText} rounded-2xl flex items-center justify-center mb-5`}>
@@ -224,7 +247,7 @@ export default function CustomerRegistration() {
               required 
               type="text" 
               name="name" 
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all" 
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all shadow-sm" 
             />
           </div>
 
@@ -236,7 +259,7 @@ export default function CustomerRegistration() {
               required 
               type="email" 
               name="email" 
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all" 
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all shadow-sm" 
             />
           </div>
 
@@ -247,7 +270,7 @@ export default function CustomerRegistration() {
             <input 
               type="date" 
               name="date_of_birth" 
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all" 
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all shadow-sm" 
             />
           </div>
 
@@ -260,7 +283,7 @@ export default function CustomerRegistration() {
               type="tel" 
               name="phone_number"
               placeholder="0123456789"
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all placeholder:text-gray-400" 
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-base focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition-all placeholder:text-gray-400 shadow-sm" 
             />
           </div>
 

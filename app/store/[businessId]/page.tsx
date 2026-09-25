@@ -43,7 +43,9 @@ export default function CustomerCheckPage() {
   // Customization State
   const [themeColor, setThemeColor] = useState('blue')
   const [stampIconKey, setStampIconKey] = useState('star')
-  const [bgPattern, setBgPattern] = useState('clean')
+  const [stampIconUrl, setStampIconUrl] = useState<string | null>(null)
+  const [portalBgType, setPortalBgType] = useState<'color' | 'pattern' | 'image'>('color')
+  const [portalBgValue, setPortalBgValue] = useState('#f9fafb')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   const [storeStatus, setStoreStatus] = useState<'LOADING' | 'INACTIVE' | 'ACTIVE'>('LOADING')
@@ -72,7 +74,7 @@ export default function CustomerCheckPage() {
 
       const { data: bData } = await supabase
         .from('businesses')
-        .select('store_name, google_review_url, subscription_status, theme_color, stamp_icon, bg_pattern, logo_url')
+        .select('store_name, google_review_url, subscription_status, theme_color, stamp_icon, portal_bg_type, portal_bg_value, stamp_icon_url, logo_url')
         .eq('id', businessId)
         .single()
       
@@ -83,7 +85,9 @@ export default function CustomerCheckPage() {
         
         if (bData.theme_color) setThemeColor(bData.theme_color)
         if (bData.stamp_icon) setStampIconKey(bData.stamp_icon)
-        if (bData.bg_pattern) setBgPattern(bData.bg_pattern)
+        if (bData.stamp_icon_url) setStampIconUrl(bData.stamp_icon_url)
+        if (bData.portal_bg_type) setPortalBgType(bData.portal_bg_type as 'color' | 'pattern' | 'image')
+        if (bData.portal_bg_value) setPortalBgValue(bData.portal_bg_value)
         if (bData.logo_url) setLogoUrl(bData.logo_url)
       }
 
@@ -102,34 +106,33 @@ export default function CustomerCheckPage() {
   }, [businessId])
 
   const handleGenerateWalletPass = async () => {
-  if (!customer) return
-  setIsGeneratingPass(true)
-  
-  try {
-    const response = await fetch('/api/wallet/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        businessId: businessId,
-        customerId: customer.id,
-        customerName: customer.name,
-        currentStamps: customer.stamps
+    if (!customer) return
+    setIsGeneratingPass(true)
+    
+    try {
+      const response = await fetch('/api/wallet/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: businessId,
+          customerId: customer.id,
+          customerName: customer.name,
+          currentStamps: customer.stamps
+        })
       })
-    })
-    
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.error)
-    
-    // Natively redirect the user to Google Wallet's save screen
-    window.location.href = data.saveUrl
-    
-  } catch (error) {
-    console.error('Pass generation failed:', error)
-    alert('Failed to generate your digital card. Please try again.')
-  } finally {
-    setIsGeneratingPass(false)
+      
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error)
+      
+      window.location.href = data.saveUrl
+      
+    } catch (error) {
+      console.error('Pass generation failed:', error)
+      alert('Failed to generate your digital card. Please try again.')
+    } finally {
+      setIsGeneratingPass(false)
+    }
   }
-}
 
   const handleCheckStamps = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -203,15 +206,33 @@ export default function CustomerCheckPage() {
   const activeTheme = ThemeStyles[themeColor] || ThemeStyles.blue
   const SelectedStampIcon = StampIconMap[stampIconKey] || Star
 
-  // Expanded background pattern generator for light mode checkout screen
-  const getBackgroundClass = () => {
-    if (bgPattern === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
-    if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
-    return 'bg-gray-50' // 'clean' default
+  // Dynamic Background Resolvers
+  const getPortalBackgroundStyle = () => {
+    if (portalBgType === 'image' && portalBgValue) {
+      return {
+        backgroundImage: `url(${portalBgValue})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }
+    }
+    if (portalBgType === 'color') return { backgroundColor: portalBgValue }
+    return {} 
+  }
+
+  const getPortalPatternClass = () => {
+    if (portalBgType === 'pattern') {
+      if (portalBgValue === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
+      if (portalBgValue === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
+    }
+    return 'bg-gray-50' // Fallback
   }
 
   return (
-    <div className={`min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 pb-24 transition-colors duration-300 ${getBackgroundClass()}`}>
+    <div 
+      className={`min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 pb-24 transition-colors duration-300 ${getPortalPatternClass()}`}
+      style={getPortalBackgroundStyle()}
+    >
       
       {/* Header with Custom Logo Support */}
       <div className="text-center mb-10 flex flex-col items-center">
@@ -219,21 +240,21 @@ export default function CustomerCheckPage() {
           <img 
             src={logoUrl} 
             alt={storeName} 
-            className="w-24 h-24 object-contain rounded-2xl mb-4 shadow-sm bg-white p-2" 
+            className="w-24 h-24 object-contain rounded-2xl mb-4 shadow-sm bg-white p-2 border border-gray-100" 
           />
         ) : (
-          <div className={`w-20 h-20 ${activeTheme.iconBg} ${activeTheme.iconText} rounded-3xl flex items-center justify-center mb-4 shadow-sm`}>
+          <div className={`w-20 h-20 ${activeTheme.iconBg} ${activeTheme.iconText} rounded-3xl flex items-center justify-center mb-4 shadow-sm border border-gray-100`}>
             <span className="font-black text-4xl">{(storeName || 'K').charAt(0).toUpperCase()}</span>
           </div>
         )}
         <h1 className="text-4xl font-black text-gray-900 tracking-tight">{storeName}</h1>
-        <p className="text-gray-500 mt-2 font-medium">Customer Loyalty Portal</p>
+        <p className="text-gray-500 mt-2 font-medium bg-white/50 px-4 py-1 rounded-full backdrop-blur-sm border border-gray-200/50">Customer Loyalty Portal</p>
       </div>
 
       <div className="w-full max-w-md space-y-6">
         
         {storeStatus === 'INACTIVE' ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center animate-in fade-in">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-8 text-center animate-in fade-in">
             <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
             </div>
@@ -243,7 +264,7 @@ export default function CustomerCheckPage() {
         ) : storeStatus === 'ACTIVE' ? (
           <>
             {/* --- LOYALTY LOOKUP CARD --- */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-8">
               {searchState !== 'FOUND' ? (
                 <div className="space-y-6">
                   <form onSubmit={handleCheckStamps} className="space-y-6">
@@ -287,7 +308,7 @@ export default function CustomerCheckPage() {
                   <h2 className="text-2xl font-bold text-gray-900">Welcome back, {customer?.name}!</h2>
                   <p className="text-gray-500 mt-1 font-medium">{customer?.stamps} / {threshold} Stamps Collected</p>
                   
-                  {/* Stamp Grid using dynamically selected icon */}
+                  {/* Stamp Grid using dynamically selected icon or uploaded image */}
                   <div className="flex flex-wrap justify-center gap-3 mt-8 mb-8">
                     {Array.from({ length: threshold }).map((_, index) => {
                       const isStamped = customer && index < customer.stamps;
@@ -297,10 +318,16 @@ export default function CustomerCheckPage() {
                           className={`w-14 h-14 rounded-full flex items-center justify-center shadow-sm transition-all duration-500 ${
                             isStamped 
                               ? `${activeTheme.bg} text-white scale-110${activeTheme.shadow}` 
-                              : 'bg-gray-100 text-gray-300 border-2 border-dashed border-gray-200'
+                              : 'bg-gray-100/80 text-gray-300 border-2 border-dashed border-gray-200'
                           }`}
                         >
-                          {isStamped ? <SelectedStampIcon className="w-6 h-6" /> : ''}
+                          {isStamped ? (
+                            stampIconUrl ? (
+                              <img src={stampIconUrl} alt="stamp" className="w-8 h-8 object-contain" />
+                            ) : (
+                              <SelectedStampIcon className="w-6 h-6" />
+                            )
+                          ) : ''}
                         </div>
                       )
                     })}
@@ -311,8 +338,8 @@ export default function CustomerCheckPage() {
                       🎉 You earned: {rewardDesc}!
                     </div>
                   ) : (
-                    <div className={`${activeTheme.lightBg} ${activeTheme.text} py-3 px-4 rounded-xl font-medium text-sm mb-6`}>
-                      Only {customer ? threshold - customer.stamps : ''} more stamps to unlock: {rewardDesc}
+                    <div className={`${activeTheme.lightBg} ${activeTheme.text} border ${activeTheme.border} py-3 px-4 rounded-xl font-medium text-sm mb-6`}>
+                      Only {customer ? threshold - customer.stamps : ''} more stamps to unlock: <span className="font-bold">{rewardDesc}</span>
                     </div>
                   )}
                   <button onClick={resetSearch} className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
@@ -324,7 +351,7 @@ export default function CustomerCheckPage() {
 
             {/* --- REVIEW GATE CARD --- */}
             {searchState === 'FOUND' && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center animate-in fade-in slide-in-from-bottom-4">
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-8 text-center animate-in fade-in slide-in-from-bottom-4">
                 
                 {feedbackStep === 'IDLE' && (
                   <div className="animate-in fade-in">
