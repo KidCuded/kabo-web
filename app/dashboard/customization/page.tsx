@@ -40,16 +40,19 @@ export default function CustomizationPage() {
   const [portalBgType, setPortalBgType] = useState<'color' | 'pattern' | 'image'>('color')
   const [portalBgValue, setPortalBgValue] = useState('#f9fafb')
   const [stampIconUrl, setStampIconUrl] = useState<string | null>(null)
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [isUploadingStamp, setIsUploadingStamp] = useState(false)
+  const [isUploadingBg, setIsUploadingBg] = useState(false)
   
   // Wallet Pass Customization State
   const [passBackgroundColor, setPassBackgroundColor] = useState('#1e293b')
   const [passHeaderColor, setPassHeaderColor] = useState('#ffffff')
+  const [walletHeroUrl, setWalletHeroUrl] = useState<string | null>(null)
+  const [isUploadingHero, setIsUploadingHero] = useState(false)
 
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
-  const [isUploadingStamp, setIsUploadingStamp] = useState(false)
-  const [isUploadingBg, setIsUploadingBg] = useState(false)
+
   const [toastMessage, setToastMessage] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -63,7 +66,7 @@ export default function CustomizationPage() {
 
         const { data: businessData } = await supabase
           .from('businesses')
-          .select('id, store_name, theme_color, stamp_icon, bg_pattern, logo_url, portal_bg_type, portal_bg_value, stamp_icon_url')
+          .select('id, store_name, theme_color, stamp_icon, bg_pattern, logo_url, portal_bg_type, portal_bg_value, stamp_icon_url, wallet_hero_url')
           .eq('auth_user_id', userData.user.id)
           .single()
 
@@ -78,6 +81,7 @@ export default function CustomizationPage() {
           }
           if (businessData.portal_bg_value) setPortalBgValue(businessData.portal_bg_value)
           if (businessData.stamp_icon_url) setStampIconUrl(businessData.stamp_icon_url)
+          if (businessData.wallet_hero_url) setWalletHeroUrl(businessData.wallet_hero_url)
         }
       } catch (err) {
         console.error('Failed to load customizations', err)
@@ -122,19 +126,24 @@ export default function CustomizationPage() {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'stamp' | 'background') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'stamp' | 'background' | 'hero') => {
     const file = e.target.files?.[0]
     if (!file) return
 
     if (type === 'stamp') setIsUploadingStamp(true)
     if (type === 'background') setIsUploadingBg(true)
+    if (type === 'hero') setIsUploadingHero(true)
 
     try {
       const { data: userData } = await supabase.auth.getUser()
       if (!userData.user) throw new Error('Not authenticated')
 
       // 1. Clean up the old image first!
-      const oldUrl = type === 'stamp' ? stampIconUrl : (portalBgType === 'image' ? portalBgValue : null)
+      let oldUrl = null
+      if (type === 'stamp') oldUrl = stampIconUrl
+      if (type === 'background' && portalBgType === 'image') oldUrl = portalBgValue
+      if (type === 'hero') oldUrl = walletHeroUrl
+      
       await deleteImageFromBucket(oldUrl)
 
       // 2. Upload the new image
@@ -156,11 +165,10 @@ export default function CustomizationPage() {
 
       const publicUrl = publicUrlData.publicUrl
 
-      if (type === 'stamp') {
-        setStampIconUrl(publicUrl)
-      } else {
-        setPortalBgValue(publicUrl)
-      }
+      // 3. Update the correct state
+      if (type === 'stamp') setStampIconUrl(publicUrl)
+      else if (type === 'background') setPortalBgValue(publicUrl)
+      else if (type === 'hero') setWalletHeroUrl(publicUrl)
 
     } catch (error: any) {
       console.error(`Error uploading ${type}:`, error)
@@ -168,6 +176,7 @@ export default function CustomizationPage() {
     } finally {
       if (type === 'stamp') setIsUploadingStamp(false)
       if (type === 'background') setIsUploadingBg(false)
+      if (type === 'hero') setIsUploadingHero(false)
       e.target.value = ''
     }
   }
@@ -255,7 +264,7 @@ export default function CustomizationPage() {
 
   // Helper to delete orphaned images and prevent bucket bloat
   const deleteImageFromBucket = async (url: string | null) => {
-    if (!url || !url.includes('store-logos/')) return // Only attempt to delete if it's a valid Supabase URL
+    if (!url || !url.includes('store-logos/')) return 
     try {
       const fileName = url.split('store-logos/')[1]
       if (fileName) {
@@ -714,12 +723,59 @@ export default function CustomizationPage() {
                         </div>
                       </div>
 
+                      {/* NEW: Hero Banner Uploader */}
+                      <div className="border-t border-gray-100 pt-8">
+                        <h3 className="text-sm font-semibold text-gray-800 mb-2">Hero Banner Image (Strip)</h3>
+                        <p className="text-xs text-gray-500 mb-4">A rich edge-to-edge graphic that appears directly beneath the header on the digital card.</p>
+                        
+                        <div className="flex flex-col gap-4">
+                          {walletHeroUrl ? (
+                            <div className="relative w-full aspect-[3/1] bg-gray-50 rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                              <img src={walletHeroUrl} alt="Hero Banner Preview" className="w-full h-full object-cover" />
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                  // Trigger your bucket deletion helper
+                                  // deleteImageFromBucket(walletHeroUrl)
+                                  setWalletHeroUrl(null)
+                                }} 
+                                className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-md hover:bg-black transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-full aspect-[3/1] bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-400 p-4">
+                              <svg className="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              <span className="text-xs font-semibold">1036 x 336px</span>
+                            </div>
+                          )}
+                          
+                          <div>
+                            <label className={`bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-bold cursor-pointer transition-colors inline-block ${isUploadingHero ? 'opacity-50 pointer-events-none' : ''}`}>
+                              {isUploadingHero ? 'Uploading...' : 'Upload Banner'}
+                              <input 
+                                type="file" 
+                                accept="image/jpeg, image/png, image/webp" 
+                                className="hidden" 
+                                onChange={(e) => {
+                                  // Trigger your upload handler
+                                  handleImageUpload(e, 'hero')
+                                }}
+                                disabled={isUploadingHero}
+                              />
+                            </label>
+                            <p className="text-xs text-gray-500 mt-2">Recommended: JPEG/PNG. Must not exceed 2MB.</p>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="p-5 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-3">
-                        <Wallet className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                        <svg className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                         <div>
-                          <h4 className="font-bold text-sm text-blue-900 mb-1">Live Google Wallet Sync</h4>
+                          <h4 className="font-bold text-sm text-blue-900 mb-1">Cross-Platform Ready</h4>
                           <p className="text-xs text-blue-700 leading-relaxed">
-                            Clicking "Save Appearance" automatically generates and updates your master template directly in the Google Wallet API using these colors and your uploaded logo.
+                            The layout above will automatically map to a <strong>Google Wallet Hero Image</strong> and an <strong>Apple Wallet Strip Image</strong> when users download their cards.
                           </p>
                         </div>
                       </div>
@@ -751,8 +807,17 @@ export default function CustomizationPage() {
                         </div>
 
                         {/* Simulated Pass Content */}
-                        <div className="absolute inset-0 pt-24 px-5 pb-5 flex flex-col">
+                        <div className="absolute inset-0 pt-20 px-5 pb-5 flex flex-col">
                           
+                          {/* Conditional Hero Banner */}
+                          {walletHeroUrl ? (
+                            <div className="w-full h-20 rounded-xl overflow-hidden shadow-md border border-black/5 mb-4 shrink-0">
+                              <img src={walletHeroUrl} alt="Hero" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="h-6"></div> /* Spacing if no banner */
+                          )}
+
                           <div className="flex-1">
                             {/* Dummy Stamps/Points Module */}
                             <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10 shadow-inner">
@@ -762,12 +827,11 @@ export default function CustomizationPage() {
                           </div>
 
                           {/* Simulated QR Code Area */}
-                          <div className="bg-white rounded-2xl p-6 flex flex-col items-center justify-center shadow-lg mt-auto">
-                            {/* Generic QR Code SVG Placeholder */}
-                            <svg className="w-32 h-32 text-gray-900 mb-3" viewBox="0 0 24 24" fill="currentColor">
+                          <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-lg mt-auto">
+                            <svg className="w-28 h-28 text-gray-900 mb-2" viewBox="0 0 24 24" fill="currentColor">
                               <path d="M3 3h8v8H3zM5 5v4h4V5zM13 3h8v8h-8zM15 5v4h4V5zM3 13h8v8H3zM5 15v4h4v-4zM18 13h3v3h-3zM13 13h3v3h-3zM15 18h3v3h-3zM18 16h3v3h-3zM13 18h2v3h-2z" />
                             </svg>
-                            <p className="text-xs text-gray-500 font-mono font-medium tracking-widest">012-345-6789</p>
+                            <p className="text-[10px] text-gray-500 font-mono font-medium tracking-widest">012-345-6789</p>
                           </div>
                           
                         </div>
@@ -781,7 +845,7 @@ export default function CustomizationPage() {
                   <button
                     type="button"
                     onClick={handleSaveCustomization}
-                    disabled={isSaving}
+                    disabled={isSaving || isUploadingHero}
                     className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl font-bold text-lg transition-colors disabled:opacity-50 active:scale-95 shadow-md"
                   >
                     {isSaving ? 'Saving...' : 'Save Appearance'}

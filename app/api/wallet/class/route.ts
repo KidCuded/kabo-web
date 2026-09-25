@@ -5,7 +5,7 @@ import { JWT } from 'google-auth-library'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { businessId, storeName, logoUrl, passBackgroundColor } = body
+    const { businessId, storeName, logoUrl, passBackgroundColor, heroImageUrl } = body
 
     if (!businessId || !storeName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -24,11 +24,14 @@ export async function POST(request: Request) {
       id: classId,
       issuerName: storeName,
       programName: storeName,
-      reviewStatus: 'UNDER_REVIEW',
-      hexBackgroundColor: passBackgroundColor || '#1e293b',
+      hexBackgroundColor: passBackgroundColor,
       programLogo: logoUrl ? {
-        sourceUri: { uri: logoUrl },
-        description: `${storeName} Logo`
+        sourceUri: { uri: logoUrl }
+      } : undefined,
+      // ADD THIS:
+      heroImage: heroImageUrl ? {
+        sourceUri: { uri: heroImageUrl },
+        description: `${storeName} Banner`
       } : undefined,
     }
 
