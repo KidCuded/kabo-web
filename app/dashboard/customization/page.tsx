@@ -208,6 +208,7 @@ export default function CustomizationPage() {
           portal_bg_type: portalBgType,
           portal_bg_value: portalBgValue,
           stamp_icon_url: stampIconUrl,
+          wallet_hero_url: walletHeroUrl  
         })
         .eq('id', businessData.id)
         
@@ -218,7 +219,8 @@ export default function CustomizationPage() {
           businessId: businessData.id,
           storeName: storeName, // Ensure storeName is in your state variables
           logoUrl: logoUrl,
-          passBackgroundColor: passBackgroundColor
+          passBackgroundColor: passBackgroundColor,
+          heroImageUrl: walletHeroUrl
         })
       })
 
@@ -736,7 +738,7 @@ export default function CustomizationPage() {
                                 type="button" 
                                 onClick={() => {
                                   // Trigger your bucket deletion helper
-                                  // deleteImageFromBucket(walletHeroUrl)
+                                  deleteImageFromBucket(walletHeroUrl)
                                   setWalletHeroUrl(null)
                                 }} 
                                 className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-md hover:bg-black transition-colors"
