@@ -66,7 +66,7 @@ export default function CustomizationPage() {
 
         const { data: businessData } = await supabase
           .from('businesses')
-          .select('id, store_name, theme_color, stamp_icon, bg_pattern, logo_url, portal_bg_type, portal_bg_value, stamp_icon_url, wallet_hero_url')
+          .select('id, store_name, theme_color, stamp_icon, bg_pattern, logo_url, portal_bg_type, portal_bg_value, stamp_icon_url, wallet_hero_url, pass_bg_color, pass_text_color')
           .eq('auth_user_id', userData.user.id)
           .single()
 
@@ -82,6 +82,8 @@ export default function CustomizationPage() {
           if (businessData.portal_bg_value) setPortalBgValue(businessData.portal_bg_value)
           if (businessData.stamp_icon_url) setStampIconUrl(businessData.stamp_icon_url)
           if (businessData.wallet_hero_url) setWalletHeroUrl(businessData.wallet_hero_url)
+          if (businessData.pass_bg_color) setPassBackgroundColor(businessData.pass_bg_color)
+          if (businessData.pass_text_color) setPassHeaderColor(businessData.pass_text_color)
         }
       } catch (err) {
         console.error('Failed to load customizations', err)
@@ -208,7 +210,9 @@ export default function CustomizationPage() {
           portal_bg_type: portalBgType,
           portal_bg_value: portalBgValue,
           stamp_icon_url: stampIconUrl,
-          wallet_hero_url: walletHeroUrl  
+          wallet_hero_url: walletHeroUrl,
+          pass_bg_color: passBackgroundColor,   
+          pass_text_color: passHeaderColor
         })
         .eq('id', businessData.id)
         
