@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import { Scanner } from '@yudiel/react-qr-scanner'
 
 export default function DashboardPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   
   const [newCustomerName, setNewCustomerName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [toastMessage, setToastMessage] = useState('')
 
@@ -93,14 +95,16 @@ export default function DashboardPage() {
     setSearchState('FOUND')
   }
 
-  // --- QR SCANNER INTEGRATION (Triggers phone camera / barcode read) ---
+  // --- QR SCANNER INTEGRATION ---
   const handleScanQR = () => {
-    // If your POS device has an attached USB barcode scanner, it acts as a keyboard and types into the active input.
-    // For mobile/tablet cameras, this triggers an input prompt or you can attach a web scanner library.
-    const scannedPhone = prompt("Scan Customer QR or enter phone number extracted from pass:")
-    if (scannedPhone) {
-      setPhoneNumber(scannedPhone)
-      handleSearch(undefined, scannedPhone)
+    setIsScanning(true)
+  }
+
+  const handleScanSuccess = (text: string) => {
+    if (text) {
+      setIsScanning(false) 
+      setPhoneNumber(text) 
+      handleSearch(undefined, text) 
     }
   }
 
@@ -388,7 +392,7 @@ export default function DashboardPage() {
                 <label className="block text-sm font-semibold text-gray-700 text-left mb-1">Stamps to Add</label>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full">
                   <div className="flex items-center justify-between sm:justify-center bg-white rounded-lg p-1 border border-gray-300 w-full">
-                    <button // -1 Button
+                    <button 
                       type="button"
                       onClick={() => setStampsToAdd(Math.max(1, stampsToAdd - 1))}
                       disabled={stampsToAdd <= 1 || isSubmitting}
@@ -404,7 +408,7 @@ export default function DashboardPage() {
                       className="w-full h-12 sm:h-10 text-center bg-transparent font-bold text-lg sm:text-base text-gray-900 outline-none appearance-none"
                       disabled={isSubmitting}
                     />
-                    <button // +1 Button
+                    <button 
                       type="button"
                       onClick={() => setStampsToAdd(stampsToAdd + 1)}
                       disabled={isSubmitting}
@@ -513,6 +517,37 @@ export default function DashboardPage() {
               </form>
             </div>
           </div>
+      )}
+
+      {/* QR Code Scanner Modal */}
+      {isScanning && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-900">Scan Customer Pass</h3>
+              <button 
+                onClick={() => setIsScanning(false)}
+                className="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="aspect-square w-full bg-black relative">
+              <Scanner 
+                onScan={(result) => handleScanSuccess(result[0].rawValue)}
+                components={{
+                  finder: true, 
+                }}
+              />
+            </div>
+            
+            <div className="p-4 text-center text-sm text-gray-500 bg-gray-50">
+              Position the customer's Google Wallet QR code inside the frame.
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
