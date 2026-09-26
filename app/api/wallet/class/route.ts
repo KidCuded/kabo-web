@@ -20,19 +20,30 @@ export async function POST(request: Request) {
       scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
     })
 
+    
     const loyaltyClass = {
       id: classId,
       issuerName: storeName,
       programName: storeName,
       hexBackgroundColor: passBackgroundColor,
+      reviewStatus: 'UNDER_REVIEW', // <-- Required by Google to save images
+      
       programLogo: logoUrl ? {
-        sourceUri: { uri: logoUrl }
+        sourceUri: { uri: logoUrl },
+        contentDescription: {
+          defaultValue: { language: 'en-US', value: 'Store Logo' }
+        }
       } : undefined,
+      
       heroImage: heroImageUrl ? {
         sourceUri: { uri: heroImageUrl },
-        description: `${storeName} Banner`
+        contentDescription: {
+          defaultValue: { language: 'en-US', value: 'Hero Banner' }
+        }
       } : undefined,
     }
+    
+    console.log(heroImageUrl);
 
     const baseUrl = 'https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass'
     

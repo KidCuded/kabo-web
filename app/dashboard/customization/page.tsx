@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import Cropper from 'react-easy-crop'
+import { getCroppedImg } from '@/utils/cropImage'
 import { Star, Coffee, Scissors, Pizza, ShoppingBag, Award, Heart, Layout, Wallet, Smartphone } from 'lucide-react'
 
 // Map string names to actual Lucide React components for the preview
@@ -50,9 +52,16 @@ export default function CustomizationPage() {
   const [walletHeroUrl, setWalletHeroUrl] = useState<string | null>(null)
   const [isUploadingHero, setIsUploadingHero] = useState(false)
 
+  // Image Cropper State
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [pendingCropType, setPendingCropType] = useState<'hero' | 'stamp' | 'background' | null>(null)
+
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-
   const [toastMessage, setToastMessage] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -128,8 +137,7 @@ export default function CustomizationPage() {
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'stamp' | 'background' | 'hero') => {
-    const file = e.target.files?.[0]
+  const uploadToSupabase = async (file: File, type: 'stamp' | 'background' | 'hero') => {
     if (!file) return
 
     if (type === 'stamp') setIsUploadingStamp(true)
@@ -149,7 +157,8 @@ export default function CustomizationPage() {
       await deleteImageFromBucket(oldUrl)
 
       // 2. Upload the new image
-      const fileExt = file.name.split('.').pop()
+      // The canvas generator defaults the filename to 'cropped.jpg', so we extract that extension
+      const fileExt = file.name.split('.').pop() || 'jpg'
       const fileName = `${userData.user.id}-${type}-${Date.now()}.${fileExt}`
 
       const { error: uploadError } = await supabase.storage
@@ -176,10 +185,40 @@ export default function CustomizationPage() {
       console.error(`Error uploading ${type}:`, error)
       alert(`Failed to upload ${type}. Please check your connection.`)
     } finally {
+      // 4. Turn off loading states (removed e.target.value = '' since we no longer use the HTML event here)
       if (type === 'stamp') setIsUploadingStamp(false)
       if (type === 'background') setIsUploadingBg(false)
       if (type === 'hero') setIsUploadingHero(false)
-      e.target.value = ''
+    }
+  }
+
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'hero' | 'stamp' | 'background') => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0]
+      const imageDataUrl = URL.createObjectURL(file)
+      setImageSrc(imageDataUrl)
+      setPendingCropType(type)
+      setCropModalOpen(true)
+      e.target.value = '' // reset input
+    }
+  }
+
+  const handleConfirmCrop = async () => {
+    if (!imageSrc || !croppedAreaPixels || !pendingCropType) return
+    
+    try {
+      // 1. Generate the cropped File
+      const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels)
+      
+      // 2. Close modal immediately for better UX
+      setCropModalOpen(false) 
+      
+      // 3. Pass the specific file to your existing upload logic
+      await uploadToSupabase(croppedFile, pendingCropType)
+      
+    } catch (e) {
+      console.error('Crop error:', e)
+      alert('Failed to crop image.')
     }
   }
 
@@ -476,7 +515,7 @@ export default function CustomizationPage() {
                             type="file" 
                             accept="image/png, image/svg+xml" 
                             className="hidden" 
-                            onChange={(e) => handleImageUpload(e, 'stamp')} 
+                            onChange={(e) => onFileSelect(e, 'stamp')} 
                             disabled={isUploadingStamp}
                           />
                         </label>
@@ -566,7 +605,7 @@ export default function CustomizationPage() {
                                   <input 
                                     type="file" 
                                     accept="image/jpeg, image/png, image/webp"
-                                    onChange={(e) => handleImageUpload(e, 'background')} 
+                                    onChange={(e) => onFileSelect(e, 'background')} 
                                     className="hidden"
                                     disabled={isUploadingBg}
                                   />
@@ -764,10 +803,7 @@ export default function CustomizationPage() {
                                 type="file" 
                                 accept="image/jpeg, image/png, image/webp" 
                                 className="hidden" 
-                                onChange={(e) => {
-                                  // Trigger your upload handler
-                                  handleImageUpload(e, 'hero')
-                                }}
+                                onChange={(e) => onFileSelect(e, 'hero')}
                                 disabled={isUploadingHero}
                               />
                             </label>
@@ -863,6 +899,56 @@ export default function CustomizationPage() {
           </form>
         )}
       </div>
+      {/* CROP MODAL UI */}
+      {cropModalOpen && imageSrc && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-900">Crop Your Image</h3>
+              <button onClick={() => setCropModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="relative h-[60vh] w-full bg-gray-900">
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={
+                  pendingCropType === 'hero' ? 1036 / 336 : 
+                  pendingCropType === 'background' ? 9 / 16 : 
+                  1
+                } 
+                onCropChange={setCrop}
+                onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+                onZoomChange={setZoom}
+              />
+            </div>
+
+            <div className="p-6 bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                aria-labelledby="Zoom"
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full sm:w-1/2"
+              />
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button onClick={() => setCropModalOpen(false)} className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-semibold text-gray-600 hover:bg-gray-100 transition-colors">
+                  Cancel
+                </button>
+                <button onClick={handleConfirmCrop} className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white px-8 py-2.5 rounded-xl font-bold shadow-md transition-colors">
+                  Confirm & Upload
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
