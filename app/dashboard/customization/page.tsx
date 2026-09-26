@@ -813,32 +813,32 @@ export default function CustomizationPage() {
                         </div>
 
                         {/* Simulated Pass Content */}
-                        <div className="absolute inset-0 pt-20 px-5 pb-5 flex flex-col">
+                        <div className="absolute inset-0 pt-20 pb-5 flex flex-col items-center">
                           
+                          <div className="flex-1 px-2 w-full">
+                            {/* Dummy Stamps/Points Module */}
+                            <div className="rounded-2xl p-4">
+                              <p className="text-xs font-semibold uppercase tracking-widest opacity-80 mb-1" style={{ color: passHeaderColor }}>Stamps</p>
+                              <p className="text-2xl font-black tracking-tight" style={{ color: passHeaderColor }}>0</p>
+                            </div>
+                          </div>
+
+                          {/* Simulated QR Code Area */}
+                          <div className="bg-white w-30 rounded-lg p-1 flex flex-col items-center justify-center shadow-lg">
+                            <svg className="w-28 h-24 text-gray-900 mb-2" viewBox="1 0 22 22" fill="currentColor">
+                              <path d="M3 3h8v8H3zM5 5v4h4V5zM13 3h8v8h-8zM15 5v4h4V5zM3 13h8v8H3zM5 15v4h4v-4zM18 13h3v3h-3zM13 13h3v3h-3zM15 18h3v3h-3zM18 16h3v3h-3zM13 18h2v3h-2z" />
+                            </svg>
+                          </div>
+                          <p className="text-[12px] p-1 text-white font-mono font-medium tracking-widest">012-345-6789</p>
+
                           {/* Conditional Hero Banner */}
                           {walletHeroUrl ? (
-                            <div className="w-full h-20 rounded-xl overflow-hidden shadow-md border border-black/5 mb-4 shrink-0">
+                            <div className="w-full h-28 overflow-hidden shadow-md border border-black/5 mb-4 shrink-0">
                               <img src={walletHeroUrl} alt="Hero" className="w-full h-full object-cover" />
                             </div>
                           ) : (
                             <div className="h-6"></div> /* Spacing if no banner */
                           )}
-
-                          <div className="flex-1">
-                            {/* Dummy Stamps/Points Module */}
-                            <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-md border border-white/10 shadow-inner">
-                              <p className="text-xs font-semibold uppercase tracking-widest opacity-80 mb-1" style={{ color: passHeaderColor }}>Current Stamps</p>
-                              <p className="text-5xl font-black tracking-tight" style={{ color: passHeaderColor }}>0</p>
-                            </div>
-                          </div>
-
-                          {/* Simulated QR Code Area */}
-                          <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-lg mt-auto">
-                            <svg className="w-28 h-28 text-gray-900 mb-2" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M3 3h8v8H3zM5 5v4h4V5zM13 3h8v8h-8zM15 5v4h4V5zM3 13h8v8H3zM5 15v4h4v-4zM18 13h3v3h-3zM13 13h3v3h-3zM15 18h3v3h-3zM18 16h3v3h-3zM13 18h2v3h-2z" />
-                            </svg>
-                            <p className="text-[10px] text-gray-500 font-mono font-medium tracking-widest">012-345-6789</p>
-                          </div>
                           
                         </div>
                       </div>
