@@ -28,7 +28,6 @@ export async function POST(request: Request) {
       programLogo: logoUrl ? {
         sourceUri: { uri: logoUrl }
       } : undefined,
-      // ADD THIS:
       heroImage: heroImageUrl ? {
         sourceUri: { uri: heroImageUrl },
         description: `${storeName} Banner`
