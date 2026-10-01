@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server'
 import { PKPass } from 'passkit-generator'
 import { createClient } from '@supabase/supabase-js'
 
-// Helper function to download Supabase URLs as Buffers
+// FIX 1: Force Vercel to never cache this route
+export const dynamic = 'force-dynamic' 
+
 async function fetchImageAsBuffer(url: string) {
   const response = await fetch(url)
   if (!response.ok) return null
@@ -11,9 +13,15 @@ async function fetchImageAsBuffer(url: string) {
   return Buffer.from(arrayBuffer)
 }
 
+// FIX 2: A robust parser to clean up Vercel environment variables
+const parseCert = (certStr?: string) => {
+  if (!certStr) return ''
+  // Remove accidental quotes Vercel might add, and fix all linebreaks
+  return certStr.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
+}
+
 export async function GET(request: Request) {
   try {
-    // Read variables from the URL instead of the body
     const { searchParams } = new URL(request.url)
     const businessId = searchParams.get('businessId')
     const customerId = searchParams.get('customerId')
@@ -25,7 +33,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing businessId' }, { status: 400 })
     }
 
-    // 1. Fetch live branding from Supabase
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     const { data: business } = await supabase
       .from('businesses')
@@ -35,7 +42,11 @@ export async function GET(request: Request) {
 
     if (!business) throw new Error('Business not found')
 
-    // 2. Initialize the Pass using Vercel Environment Variables
+    // FIX 3: Safety check - Apple WILL reject the pass if icon is missing
+    if (!business.logo_url) {
+      throw new Error('Merchant must upload a Store Logo before generating Apple Wallet passes.')
+    }
+
     const pass = new PKPass({
       'pass.json': Buffer.from(JSON.stringify({
         passTypeIdentifier: 'pass.com.yourdomain.loyalty', // Keep your actual ID here
@@ -61,13 +72,12 @@ export async function GET(request: Request) {
         }
       })),
     }, {
-      // Provide an empty string fallback to satisfy TypeScript's strict string requirement
-      signerCert: (process.env.APPLE_SIGNER_CERT || '').replace(/\\n/g, '\n'),
-      signerKey: (process.env.APPLE_SIGNER_KEY || '').replace(/\\n/g, '\n'),
-      wwdr: (process.env.APPLE_WWDR_CERT || '').replace(/\\n/g, '\n')
+      // Using the robust Vercel parser
+      signerCert: parseCert(process.env.APPLE_SIGNER_CERT),
+      signerKey: parseCert(process.env.APPLE_SIGNER_KEY),
+      wwdr: parseCert(process.env.APPLE_WWDR_CERT)
     })
 
-    // 3. Download and attach remote Supabase images
     if (business.logo_url) {
       const logoBuffer = await fetchImageAsBuffer(business.logo_url)
       if (logoBuffer) {
@@ -81,7 +91,6 @@ export async function GET(request: Request) {
       if (stripBuffer) pass.addBuffer('strip.png', stripBuffer) 
     }
 
-    // 4. Generate & Return the file
     const passBuffer = await pass.getAsBuffer()
 
     return new NextResponse(new Uint8Array(passBuffer), {
@@ -93,7 +102,8 @@ export async function GET(request: Request) {
     })
 
   } catch (error: any) {
-    console.error('Apple Wallet Error:', error)
-    return NextResponse.json({ error: 'Failed to generate Apple Pass' }, { status: 500 })
+    // This logs the true error to your Vercel Dashboard
+    console.error('CRITICAL APPLE WALLET ERROR:', error)
+    return NextResponse.json({ error: error.message || 'Failed to generate Apple Pass' }, { status: 500 })
   }
 }
