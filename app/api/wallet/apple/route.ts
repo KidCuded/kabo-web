@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { PKPass } from 'passkit-generator'
 import { createClient } from '@supabase/supabase-js'
 
-// FIX 1: Force Vercel to never cache this route
 export const dynamic = 'force-dynamic' 
 
 async function fetchImageAsBuffer(url: string) {
@@ -13,11 +12,9 @@ async function fetchImageAsBuffer(url: string) {
   return Buffer.from(arrayBuffer)
 }
 
-// FIX 2: A robust parser to clean up Vercel environment variables
-const parseCert = (certStr?: string) => {
-  if (!certStr) return ''
-  // Remove accidental quotes Vercel might add, and fix all linebreaks
-  return certStr.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
+const parseEnv = (val?: string) => {
+  if (!val) return ''
+  return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
 }
 
 export async function GET(request: Request) {
@@ -42,15 +39,15 @@ export async function GET(request: Request) {
 
     if (!business) throw new Error('Business not found')
 
-    // FIX 3: Safety check - Apple WILL reject the pass if icon is missing
     if (!business.logo_url) {
       throw new Error('Merchant must upload a Store Logo before generating Apple Wallet passes.')
     }
 
+    // 1. Initialize pass WITHOUT the legacy barcode option
     const pass = new PKPass({
       'pass.json': Buffer.from(JSON.stringify({
-        passTypeIdentifier: 'pass.my.kabo', // Keep your actual ID here
-        teamIdentifier: process.env.APPLE_TEAM_ID,
+        passTypeIdentifier: 'pass.my.kabo',
+        teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
         organizationName: business.store_name,
         description: `${business.store_name} Loyalty Card`,
         logoText: business.store_name,
@@ -64,31 +61,30 @@ export async function GET(request: Request) {
           secondaryFields: [
             { key: 'customer', label: 'MEMBER', value: customerName }
           ]
-        },
-        barcode: {
-          message: phoneNumber,
-          format: 'PKBarcodeFormatQR',
-          messageEncoding: 'iso-8859-1'
         }
       })),
     }, {
-      // Using the robust Vercel parser
-      signerCert: parseCert(process.env.APPLE_SIGNER_CERT),
-      signerKey: parseCert(process.env.APPLE_SIGNER_KEY),
-      wwdr: parseCert(process.env.APPLE_WWDR_CERT)
+      signerCert: parseEnv(process.env.APPLE_SIGNER_CERT),
+      signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
+      wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
     })
+
+    // 2. Properly inject the barcode using passkit-generator's method
+    if (phoneNumber) {
+      pass.setBarcodes({
+        message: phoneNumber,
+        format: 'PKBarcodeFormatQR',
+        messageEncoding: 'iso-8859-1',
+        altText: phoneNumber
+      })
+    }
 
     if (business.logo_url) {
       const logoBuffer = await fetchImageAsBuffer(business.logo_url)
       if (logoBuffer) {
         pass.addBuffer('logo.png', logoBuffer)
         pass.addBuffer('icon.png', logoBuffer)
-      } else {
-        // If the image fails to download, crash the server so Vercel logs it!
-        throw new Error('CRITICAL: Failed to download logo from Supabase. Pass will be rejected by Apple.')
       }
-    } else {
-       throw new Error('CRITICAL: No logo_url found in database. Apple requires an icon.')
     }
 
     if (business.wallet_hero_url) {
@@ -106,17 +102,7 @@ export async function GET(request: Request) {
       }
     })
 
-    // return new NextResponse(new Uint8Array(passBuffer), {
-    //   status: 200,
-    //   headers: {
-    //     // Temporarily change to zip so your browser will download it for inspection
-    //     'Content-Type': 'application/zip',
-    //     'Content-Disposition': 'attachment; filename="debug-pass.zip"'
-    //   }
-    // })
-
   } catch (error: any) {
-    // This logs the true error to your Vercel Dashboard
     console.error('CRITICAL APPLE WALLET ERROR:', error)
     return NextResponse.json({ error: error.message || 'Failed to generate Apple Pass' }, { status: 500 })
   }
