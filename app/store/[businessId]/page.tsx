@@ -39,6 +39,7 @@ export default function CustomerCheckPage() {
   const [threshold, setThreshold] = useState(10)
   const [rewardDesc, setRewardDesc] = useState('Reward')
   const [reviewUrl, setReviewUrl] = useState('')
+  const [reviewThreshold, setReviewThreshold] = useState(4)
   
   // Customization State
   const [themeColor, setThemeColor] = useState('blue')
@@ -62,10 +63,6 @@ export default function CustomerCheckPage() {
   const [feedbackStep, setFeedbackStep] = useState<'IDLE' | 'ASK_TEXT' | 'SHOW_GOOGLE' | 'SUBMITTED'>('IDLE')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Google Wallet Pass Generation State
-  const [walletUrl, setWalletUrl] = useState<string | null>(null)
-  const [isGeneratingPass, setIsGeneratingPass] = useState(false)
-
   const supabase = createClient()
 
   useEffect(() => {
@@ -74,13 +71,15 @@ export default function CustomerCheckPage() {
 
       const { data: bData } = await supabase
         .from('businesses')
-        .select('store_name, google_review_url, subscription_status, theme_color, stamp_icon, portal_bg_type, portal_bg_value, stamp_icon_url, logo_url')
+        .select('store_name, google_review_url, google_review_threshold, subscription_status, theme_color, stamp_icon, portal_bg_type, portal_bg_value, stamp_icon_url, logo_url')
         .eq('id', businessId)
         .single()
       
       if (bData) {
         setStoreName(bData.store_name)
         if (bData.google_review_url) setReviewUrl(bData.google_review_url)
+        if (bData.google_review_threshold !== null) setReviewThreshold(bData.google_review_threshold) 
+        
         setStoreStatus(bData.subscription_status === 'inactive' ? 'INACTIVE' : 'ACTIVE')
         
         if (bData.theme_color) setThemeColor(bData.theme_color)
@@ -104,35 +103,6 @@ export default function CustomerCheckPage() {
     }
     fetchStoreDetails()
   }, [businessId])
-
-  const handleGenerateWalletPass = async () => {
-    if (!customer) return
-    setIsGeneratingPass(true)
-    
-    try {
-      const response = await fetch('/api/wallet/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: businessId,
-          customerId: customer.id,
-          customerName: customer.name,
-          currentStamps: customer.stamps
-        })
-      })
-      
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error)
-      
-      window.location.href = data.saveUrl
-      
-    } catch (error) {
-      console.error('Pass generation failed:', error)
-      alert('Failed to generate your digital card. Please try again.')
-    } finally {
-      setIsGeneratingPass(false)
-    }
-  }
 
   const handleCheckStamps = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,7 +147,7 @@ export default function CustomerCheckPage() {
 
   const handleStarClick = (selectedRating: number) => {
     setRating(selectedRating)
-    if (selectedRating >= 4) {
+    if (selectedRating >= reviewThreshold) {
       setFeedbackStep('SHOW_GOOGLE')
       submitToDatabase(selectedRating, '') 
     } else {
@@ -225,7 +195,7 @@ export default function CustomerCheckPage() {
       if (portalBgValue === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
       if (portalBgValue === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
     }
-    return 'bg-gray-50' // Fallback
+    return 'bg-gray-50' 
   }
 
   return (
@@ -308,7 +278,7 @@ export default function CustomerCheckPage() {
                   <h2 className="text-2xl font-bold text-gray-900">Welcome back, {customer?.name}!</h2>
                   <p className="text-gray-500 mt-1 font-medium">{customer?.stamps} / {threshold} Stamps Collected</p>
                   
-                  {/* Stamp Grid using dynamically selected icon or uploaded image */}
+                  {/* Stamp Grid */}
                   <div className="flex flex-wrap justify-center gap-3 mt-8 mb-8">
                     {Array.from({ length: threshold }).map((_, index) => {
                       const isStamped = customer && index < customer.stamps;

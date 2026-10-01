@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const [stampThreshold, setStampThreshold] = useState<number | ''>(10)
   const [rewardDescription, setRewardDescription] = useState('')
   const [googleReviewUrl, setGoogleReviewUrl] = useState('') 
+  const [reviewThreshold, setReviewThreshold] = useState<number>(4)
   
   // UI State
   const [isLoading, setIsLoading] = useState(true)
@@ -31,13 +32,14 @@ export default function SettingsPage() {
 
         const { data: businessData } = await supabase
           .from('businesses')
-          .select('id, store_name, google_review_url, contact_number, address')
+          .select('id, store_name, google_review_url, google_review_threshold, contact_number, address')
           .eq('auth_user_id', userData.user.id)
           .single()
 
         if (businessData) {
           setStoreName(businessData.store_name)
           if (businessData.google_review_url) setGoogleReviewUrl(businessData.google_review_url)
+          if (businessData.google_review_threshold) setReviewThreshold(businessData.google_review_threshold)
           if (businessData.contact_number) setContactNumber(businessData.contact_number)
           if (businessData.address) setAddress(businessData.address)
 
@@ -102,6 +104,7 @@ export default function SettingsPage() {
         .from('businesses')
         .update({ 
           google_review_url: googleReviewUrl,
+          google_review_threshold: reviewThreshold,
           contact_number: contactNumber,
           address: address
         })
@@ -231,16 +234,35 @@ export default function SettingsPage() {
                 <h3 className="text-xl font-bold text-gray-900">Google Reviews</h3>
               </div>
               
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">Review Link (Optional)</label>
-                <input
-                  type="url"
-                  placeholder="https://g.page/r/..."
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
-                  value={googleReviewUrl}
-                  onChange={(e) => setGoogleReviewUrl(e.target.value)}
-                />
-                <p className="text-sm text-gray-500 mt-2">When a customer redeems a reward, they will be prompted to leave a review using this link.</p>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Review Link (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://g.page/r/..."
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
+                    value={googleReviewUrl}
+                    onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                  />
+                  <p className="text-sm text-gray-500 mt-2">When a customer redeems a reward, they will be prompted to leave a review using this link.</p>
+                </div>
+                
+                {/* NEW THRESHOLD SELECTOR */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Review Redirection Threshold</label>
+                  <select
+                    className="w-full md:w-1/2 rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors bg-white"
+                    value={reviewThreshold}
+                    onChange={(e) => setReviewThreshold(Number(e.target.value))}
+                  >
+                    <option value={5}>5 Stars Only</option>
+                    <option value={4}>4 Stars and up</option>
+                    <option value={3}>3 Stars and up</option>
+                    <option value={2}>2 Stars and up</option>
+                    <option value={1}>1 Star and up (Always Redirect)</option>
+                  </select>
+                  <p className="text-sm text-gray-500 mt-2">Ratings below this threshold will redirect to a private feedback form instead of your public Google link.</p>
+                </div>
               </div>
             </section>
 
