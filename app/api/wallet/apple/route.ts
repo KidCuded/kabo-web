@@ -54,9 +54,10 @@ export async function POST(request: Request) {
         }
       })),
     }, {
-      signerCert: fs.readFileSync(path.join(certPath, 'signerCert.pem')),
-      signerKey: fs.readFileSync(path.join(certPath, 'signerKey.pem')),
-      wwdr: fs.readFileSync(path.join(certPath, 'wwdr.pem'))
+      // Provide an empty string fallback to satisfy TypeScript's strict string requirement
+      signerCert: (process.env.APPLE_SIGNER_CERT || '').replace(/\\n/g, '\n'),
+      signerKey: (process.env.APPLE_SIGNER_KEY || '').replace(/\\n/g, '\n'),
+      wwdr: (process.env.APPLE_WWDR_CERT || '').replace(/\\n/g, '\n')
     })
 
     // 3. Download and attach remote Supabase images
