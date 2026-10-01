@@ -124,42 +124,31 @@ export default function CustomerRegistration() {
     setIsSubmitting(false)
   }
 
-  const handleAppleWallet = async () => {
+  const handleAppleWallet = () => {
     if (!customerInfo) return
     setIsGeneratingApple(true)
     
     try {
-      const response = await fetch('/api/wallet/apple', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: businessId,
-          customerId: customerInfo.phone, // Passing phone as the temporary ID since we don't return UUID immediately
-          customerName: customerInfo.name,
-          phoneNumber: customerInfo.phone,
-          currentStamps: 0 // New registrations always start with 0 stamps
-        })
+      // Build the standard URL query parameters
+      const params = new URLSearchParams({
+        businessId: businessId,
+        customerId: customerInfo.phone, 
+        customerName: customerInfo.name,
+        phoneNumber: customerInfo.phone,
+        currentStamps: '0'
       })
       
-      if (!response.ok) throw new Error('Failed to generate pass')
+      // Directly navigate the browser to the API route.
+      // Safari will intercept the resulting .pkpass header and pop up the native Wallet sheet.
+      window.location.href = `/api/wallet/apple?${params.toString()}`
       
-      // Convert the response to a Blob to trigger the file download
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${storeName.replace(/\s+/g, '')}-Loyalty.pkpass`
-      document.body.appendChild(link)
-      link.click()
-      
-      // Cleanup
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      // Since window.location doesn't actually unload the current page when a file download triggers,
+      // we just turn the loading spinner off after a couple of seconds.
+      setTimeout(() => setIsGeneratingApple(false), 2000)
       
     } catch (error) {
       console.error('Apple Pass failed:', error)
       alert('Failed to download Apple Wallet pass. Please try again.')
-    } finally {
       setIsGeneratingApple(false)
     }
   }

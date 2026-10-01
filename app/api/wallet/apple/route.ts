@@ -2,8 +2,6 @@
 import { NextResponse } from 'next/server'
 import { PKPass } from 'passkit-generator'
 import { createClient } from '@supabase/supabase-js'
-import fs from 'fs'
-import path from 'path'
 
 // Helper function to download Supabase URLs as Buffers
 async function fetchImageAsBuffer(url: string) {
@@ -13,9 +11,19 @@ async function fetchImageAsBuffer(url: string) {
   return Buffer.from(arrayBuffer)
 }
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    const { businessId, customerId, customerName, phoneNumber, currentStamps } = await request.json()
+    // Read variables from the URL instead of the body
+    const { searchParams } = new URL(request.url)
+    const businessId = searchParams.get('businessId')
+    const customerId = searchParams.get('customerId')
+    const customerName = searchParams.get('customerName') || 'Valued Customer'
+    const phoneNumber = searchParams.get('phoneNumber') || ''
+    const currentStamps = parseInt(searchParams.get('currentStamps') || '0', 10)
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'Missing businessId' }, { status: 400 })
+    }
 
     // 1. Fetch live branding from Supabase
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -27,11 +35,10 @@ export async function POST(request: Request) {
 
     if (!business) throw new Error('Business not found')
 
-    // 2. Load Certificates (Ensure your paths match where you saved them)
-    const certPath = path.join(process.cwd(), 'certificates')
+    // 2. Initialize the Pass using Vercel Environment Variables
     const pass = new PKPass({
       'pass.json': Buffer.from(JSON.stringify({
-        passTypeIdentifier: 'pass.com.yourdomain.loyalty', // MUST match your Apple portal ID
+        passTypeIdentifier: 'pass.com.yourdomain.loyalty', // Keep your actual ID here
         teamIdentifier: process.env.APPLE_TEAM_ID,
         organizationName: business.store_name,
         description: `${business.store_name} Loyalty Card`,
@@ -65,13 +72,12 @@ export async function POST(request: Request) {
       const logoBuffer = await fetchImageAsBuffer(business.logo_url)
       if (logoBuffer) {
         pass.addBuffer('logo.png', logoBuffer)
-        pass.addBuffer('icon.png', logoBuffer) // Apple requires an icon.png, so we reuse the logo
+        pass.addBuffer('icon.png', logoBuffer)
       }
     }
 
     if (business.wallet_hero_url) {
       const stripBuffer = await fetchImageAsBuffer(business.wallet_hero_url)
-      // Apple calls the hero banner a "strip"
       if (stripBuffer) pass.addBuffer('strip.png', stripBuffer) 
     }
 
