@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
     const pass = new PKPass({
       'pass.json': Buffer.from(JSON.stringify({
-        passTypeIdentifier: 'pass.com.yourdomain.loyalty', // Keep your actual ID here
+        passTypeIdentifier: 'pass.my.kabo', // Keep your actual ID here
         teamIdentifier: process.env.APPLE_TEAM_ID,
         organizationName: business.store_name,
         description: `${business.store_name} Loyalty Card`,
