@@ -83,7 +83,12 @@ export async function GET(request: Request) {
       if (logoBuffer) {
         pass.addBuffer('logo.png', logoBuffer)
         pass.addBuffer('icon.png', logoBuffer)
+      } else {
+        // If the image fails to download, crash the server so Vercel logs it!
+        throw new Error('CRITICAL: Failed to download logo from Supabase. Pass will be rejected by Apple.')
       }
+    } else {
+       throw new Error('CRITICAL: No logo_url found in database. Apple requires an icon.')
     }
 
     if (business.wallet_hero_url) {
