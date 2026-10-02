@@ -17,6 +17,21 @@ const parseEnv = (val?: string) => {
   return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
 }
 
+// Helper function to convert hex colors to Apple's required rgb string
+const hexToRgb = (hex: string) => {
+  hex = hex.replace(/^#/, '')
+  // Handle 3-character shorthand hex (e.g., FFF)
+  if (hex.length === 3) {
+    hex = hex.split('').map(c => c + c).join('')
+  }
+  const num = parseInt(hex, 16)
+  const r = (num >> 16) & 255
+  const g = (num >> 8) & 255
+  const b = num & 255
+  
+  return `rgb(${r}, ${g}, ${b})`
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -43,24 +58,23 @@ export async function GET(request: Request) {
       throw new Error('Merchant must upload a Store Logo before generating Apple Wallet passes.')
     }
 
-    // 1. Initialize pass WITHOUT the legacy barcode option
+    // 1. Initialize pass
     const pass = new PKPass({
         'pass.json': Buffer.from(JSON.stringify({
             formatVersion: 1,
             passTypeIdentifier: 'pass.my.kabo',
-            serialNumber: customerId || `temp-${Date.now()}`, // Added required serialNumber
+            serialNumber: customerId || `temp-${Date.now()}`,
             teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
             organizationName: business.store_name,
             description: `${business.store_name} Loyalty Card`,
             logoText: business.store_name,
-            backgroundColor: 'rgb(30, 41, 59)', // Converted to RGB format
-            foregroundColor: 'rgb(255, 255, 255)', // Converted to RGB format
+            // Dynamically convert the DB hex colors to Apple's RGB format
+            backgroundColor: hexToRgb(business.pass_bg_color),
+            foregroundColor: hexToRgb(business.pass_text_color),
             storeCard: {
-                primaryFields: [
-                    { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
-                ],
+                // primaryFields removed to keep the hero banner clean
                 secondaryFields: [
-                    { key: 'customer', label: 'MEMBER', value: customerName }
+                    { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
                 ]
             }
         })),
@@ -69,6 +83,7 @@ export async function GET(request: Request) {
         signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
         wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
     })
+    
     // 2. Properly inject the barcode using passkit-generator's method
     if (phoneNumber) {
       pass.setBarcodes({
@@ -79,22 +94,24 @@ export async function GET(request: Request) {
       })
     }
 
-    // 2. Corrected image buffer injection
+    // 3. Image buffer injection
     if (business.logo_url) {
-    const logoBuffer = await fetchImageAsBuffer(business.logo_url)
-    if (!logoBuffer) {
-        // Throw an error instead of silently building an invalid pass without an icon
-        throw new Error('Failed to fetch required store logo image.') 
-    }
-    pass.addBuffer('logo.png', logoBuffer)
-    pass.addBuffer('logo@2x.png', logoBuffer)
-    pass.addBuffer('icon.png', logoBuffer)
-    pass.addBuffer('icon@2x.png', logoBuffer) // Added required Retina icon
+      const logoBuffer = await fetchImageAsBuffer(business.logo_url)
+      if (!logoBuffer) {
+          throw new Error('Failed to fetch required store logo image.') 
+      }
+      pass.addBuffer('logo.png', logoBuffer)
+      pass.addBuffer('logo@2x.png', logoBuffer)
+      pass.addBuffer('icon.png', logoBuffer)
+      pass.addBuffer('icon@2x.png', logoBuffer)
     }
 
     if (business.wallet_hero_url) {
       const stripBuffer = await fetchImageAsBuffer(business.wallet_hero_url)
-      if (stripBuffer) pass.addBuffer('strip.png', stripBuffer) 
+      if (stripBuffer) {
+        pass.addBuffer('strip.png', stripBuffer)
+        pass.addBuffer('strip@2x.png', stripBuffer) // Good practice to include @2x for strips as well
+      } 
     }
 
     const passBuffer = await pass.getAsBuffer()
