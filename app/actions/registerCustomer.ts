@@ -76,9 +76,6 @@ export async function registerCustomer(formData: FormData) {
     return { error: 'Failed to create customer profile. Please try again.' }
   }
 
-  // Pass the newly generated customer UUID back to the frontend
-  return { success: true, customer_id: newCustomer.id }
-
   // 4. Initialize their loyalty balance
   const { error: balanceError } = await supabaseAdmin
     .from('loyalty_balances')
@@ -92,5 +89,6 @@ export async function registerCustomer(formData: FormData) {
     return { error: 'Profile created, but failed to initialize loyalty balance.' }
   }
 
-  return { success: true }
+  // Pass the newly generated customer UUID back to the frontend
+  return { success: true, customer_id: newCustomer.id }
 }
