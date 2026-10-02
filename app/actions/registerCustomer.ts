@@ -54,7 +54,8 @@ export async function registerCustomer(formData: FormData) {
       return { error: 'Failed to update existing profile.' }
     }
 
-    return { success: true }
+    // Pass the existing customer UUID back to the frontend
+    return { success: true, customer_id: existingCustomer.id }
   }
 
   // 3. IF CUSTOMER DOES NOT EXIST: Standard Insertion
@@ -74,6 +75,9 @@ export async function registerCustomer(formData: FormData) {
   if (insertError) {
     return { error: 'Failed to create customer profile. Please try again.' }
   }
+
+  // Pass the newly generated customer UUID back to the frontend
+  return { success: true, customer_id: newCustomer.id }
 
   // 4. Initialize their loyalty balance
   const { error: balanceError } = await supabaseAdmin

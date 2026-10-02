@@ -28,7 +28,7 @@ export default function CustomerRegistration() {
   const [status, setStatus] = useState<{ error?: string; success?: boolean } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
-  const [customerInfo, setCustomerInfo] = useState<{ name: string; phone: string } | null>(null)
+  const [customerInfo, setCustomerInfo] = useState<{ id: string; name: string; phone: string } | null>(null)
 
   // Wallet State
   const [deviceOS, setDeviceOS] = useState<'ios' | 'android' | 'other'>('other')
@@ -118,34 +118,27 @@ export default function CustomerRegistration() {
     if (result.error) {
       setStatus({ error: result.error })
     } else {
-      setCustomerInfo({ name, phone })
+      // Save the customer UUID returned by your action
+      setCustomerInfo({ id: result.customer_id, name, phone })
       setStatus({ success: true })
     }
-    setIsSubmitting(false)
   }
 
   const handleAppleWallet = () => {
     if (!customerInfo) return
     setIsGeneratingApple(true)
-    
+
     try {
-      // Build the standard URL query parameters
       const params = new URLSearchParams({
         businessId: businessId,
-        customerId: customerInfo.phone, 
+        customerId: customerInfo.id, // Passing the customer UUID from Supabase
         customerName: customerInfo.name,
         phoneNumber: customerInfo.phone,
         currentStamps: '0'
       })
-      
-      // Directly navigate the browser to the API route.
-      // Safari will intercept the resulting .pkpass header and pop up the native Wallet sheet.
+
       window.location.href = `/api/wallet/apple?${params.toString()}`
-      
-      // Since window.location doesn't actually unload the current page when a file download triggers,
-      // we just turn the loading spinner off after a couple of seconds.
       setTimeout(() => setIsGeneratingApple(false), 2000)
-      
     } catch (error) {
       console.error('Apple Pass failed:', error)
       alert('Failed to download Apple Wallet pass. Please try again.')

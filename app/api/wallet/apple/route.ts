@@ -60,28 +60,31 @@ export async function GET(request: Request) {
 
     // 1. Initialize pass
     const pass = new PKPass({
-        'pass.json': Buffer.from(JSON.stringify({
-            formatVersion: 1,
-            passTypeIdentifier: 'pass.my.kabo',
-            serialNumber: customerId || `temp-${Date.now()}`,
-            teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
-            organizationName: business.store_name,
-            description: `${business.store_name} Loyalty Card`,
-            logoText: business.store_name,
-            // Dynamically convert the DB hex colors to Apple's RGB format
-            backgroundColor: hexToRgb(business.pass_bg_color),
-            foregroundColor: hexToRgb(business.pass_text_color),
-            storeCard: {
-                // primaryFields removed to keep the hero banner clean
-                secondaryFields: [
-                    { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
-                ]
-            }
-        })),
+      'pass.json': Buffer.from(JSON.stringify({
+        formatVersion: 1,
+        passTypeIdentifier: 'pass.my.kabo',
+        serialNumber: customerId, // Customer UUID from Supabase
+        teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
+        
+        // Webhook communication endpoints
+        webServiceURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple/webhook`,
+        authenticationToken: process.env.APPLE_WEB_SERVICE_AUTH_TOKEN,
+
+        organizationName: business.store_name,
+        description: `${business.store_name} Loyalty Card`,
+        logoText: business.store_name,
+        backgroundColor: hexToRgb(business.pass_bg_color || '#1e293b'),
+        foregroundColor: hexToRgb(business.pass_text_color || '#ffffff'),
+        storeCard: {
+          secondaryFields: [
+            { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
+          ]
+        }
+      })),
     }, {
-        signerCert: parseEnv(process.env.APPLE_SIGNER_CERT),
-        signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
-        wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
+      signerCert: parseEnv(process.env.APPLE_SIGNER_CERT),
+      signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
+      wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
     })
     
     // 2. Properly inject the barcode using passkit-generator's method
