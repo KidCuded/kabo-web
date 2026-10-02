@@ -45,30 +45,30 @@ export async function GET(request: Request) {
 
     // 1. Initialize pass WITHOUT the legacy barcode option
     const pass = new PKPass({
-      'pass.json': Buffer.from(JSON.stringify({
-        passTypeIdentifier: 'pass.my.kabo',
-        teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
-        organizationName: business.store_name,
-        description: `${business.store_name} Loyalty Card`,
-        logoText: business.store_name,
-        backgroundColor: business.pass_bg_color || '#1e293b',
-        foregroundColor: business.pass_text_color || '#ffffff',
-        formatVersion: 1,
-        storeCard: {
-          primaryFields: [
-            { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
-          ],
-          secondaryFields: [
-            { key: 'customer', label: 'MEMBER', value: customerName }
-          ]
-        }
-      })),
+        'pass.json': Buffer.from(JSON.stringify({
+            formatVersion: 1,
+            passTypeIdentifier: 'pass.my.kabo',
+            serialNumber: customerId || `temp-${Date.now()}`, // Added required serialNumber
+            teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
+            organizationName: business.store_name,
+            description: `${business.store_name} Loyalty Card`,
+            logoText: business.store_name,
+            backgroundColor: 'rgb(30, 41, 59)', // Converted to RGB format
+            foregroundColor: 'rgb(255, 255, 255)', // Converted to RGB format
+            storeCard: {
+                primaryFields: [
+                    { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
+                ],
+                secondaryFields: [
+                    { key: 'customer', label: 'MEMBER', value: customerName }
+                ]
+            }
+        })),
     }, {
-      signerCert: parseEnv(process.env.APPLE_SIGNER_CERT),
-      signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
-      wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
+        signerCert: parseEnv(process.env.APPLE_SIGNER_CERT),
+        signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
+        wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
     })
-
     // 2. Properly inject the barcode using passkit-generator's method
     if (phoneNumber) {
       pass.setBarcodes({
@@ -79,12 +79,17 @@ export async function GET(request: Request) {
       })
     }
 
+    // 2. Corrected image buffer injection
     if (business.logo_url) {
-      const logoBuffer = await fetchImageAsBuffer(business.logo_url)
-      if (logoBuffer) {
-        pass.addBuffer('logo.png', logoBuffer)
-        pass.addBuffer('icon.png', logoBuffer)
-      }
+    const logoBuffer = await fetchImageAsBuffer(business.logo_url)
+    if (!logoBuffer) {
+        // Throw an error instead of silently building an invalid pass without an icon
+        throw new Error('Failed to fetch required store logo image.') 
+    }
+    pass.addBuffer('logo.png', logoBuffer)
+    pass.addBuffer('logo@2x.png', logoBuffer)
+    pass.addBuffer('icon.png', logoBuffer)
+    pass.addBuffer('icon@2x.png', logoBuffer) // Added required Retina icon
     }
 
     if (business.wallet_hero_url) {
