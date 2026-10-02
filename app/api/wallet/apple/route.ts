@@ -73,8 +73,8 @@ export async function GET(request: Request) {
         organizationName: business.store_name,
         description: `${business.store_name} Loyalty Card`,
         logoText: business.store_name,
-        backgroundColor: hexToRgb(business.pass_bg_color || '#1e293b'),
-        foregroundColor: hexToRgb(business.pass_text_color || '#ffffff'),
+        backgroundColor: hexToRgb(business.pass_bg_color),
+        foregroundColor: hexToRgb(business.pass_text_color),
         storeCard: {
           secondaryFields: [
             { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
