@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
         
         // Webhook communication endpoints
-        webServiceURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple/webhook`,
+        webServiceURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple/webhook`,
         authenticationToken: process.env.APPLE_WEB_SERVICE_AUTH_TOKEN,
 
         organizationName: business.store_name,
