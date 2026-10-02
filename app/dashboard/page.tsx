@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Scanner } from '@yudiel/react-qr-scanner'
+import { sendAppleWalletPush } from '@/utils/applePush'
 
 export default function DashboardPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -225,6 +226,20 @@ export default function DashboardPage() {
         })
       } catch (walletErr) {
         console.error("Google Wallet sync skipped/failed:", walletErr)
+      }
+
+      // 5. --- SYNC WITH APPLE WALLET ---
+      // 1. Find all Apple devices registered to this specific customer
+      const { data: devices } = await supabase
+        .from('apple_wallet_registrations')
+        .select('push_token')
+        .eq('customer_id', customer.id) // The UUID of the customer who just got a stamp
+
+      // 2. Fire off a push notification to every device they own
+      if (devices && devices.length > 0) {
+        await Promise.all(
+          devices.map(device => sendAppleWalletPush(device.push_token))
+        )
       }
 
       // Update UI state
