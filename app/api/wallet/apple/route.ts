@@ -86,6 +86,9 @@ export async function GET(request: Request) {
       signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
       wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
     })
+
+    // Explicitly lock in the pass type to bypass strict validation errors
+    pass.type = 'storeCard'
     
     // 2. Properly inject the barcode using passkit-generator's method
     if (phoneNumber) {
