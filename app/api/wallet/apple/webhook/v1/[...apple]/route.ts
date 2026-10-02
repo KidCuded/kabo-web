@@ -11,21 +11,21 @@ function getSupabase() {
   )
 }
 
-// Helper to validate the authorization header from Apple devices
 function isValidAuth(request: Request) {
   const authHeader = request.headers.get('Authorization')
   const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
   return authHeader === expectedToken
 }
 
-// Handle Device Registration (POST) & Pass Logging (POST)
 export async function POST(
   request: Request,
-  { params }: { params: { apple: string[] } }
+  // 1. Update the type to Promise
+  { params }: { params: Promise<{ apple: string[] }> }
 ) {
-  const path = params.apple // e.g. ['devices', deviceId, 'registrations', passTypeId, serialNum] or ['log']
+  // 2. Await the params before using them
+  const resolvedParams = await params
+  const path = resolvedParams.apple
 
-  // 1. Device Registration Request
   if (path[0] === 'devices' && path[2] === 'registrations') {
     if (!isValidAuth(request)) {
       return new NextResponse(null, { status: 401 })
@@ -44,7 +44,6 @@ export async function POST(
 
     const supabase = getSupabase()
 
-    // Upsert registration token linked to customer UUID (serialNumber)
     const { error } = await supabase
       .from('apple_wallet_registrations')
       .upsert(
@@ -63,10 +62,9 @@ export async function POST(
       return new NextResponse(null, { status: 500 })
     }
 
-    return new NextResponse(null, { status: 201 }) // 201 Created
+    return new NextResponse(null, { status: 201 })
   }
 
-  // 2. Apple Wallet Client Error Logs
   if (path[0] === 'log') {
     const body = await request.json()
     console.log('Apple Wallet Client Log:', body)
@@ -76,12 +74,14 @@ export async function POST(
   return new NextResponse(null, { status: 404 })
 }
 
-// Handle Unregistering Device Token when pass is deleted
 export async function DELETE(
   request: Request,
-  { params }: { params: { apple: string[] } }
+  // 1. Update the type to Promise
+  { params }: { params: Promise<{ apple: string[] }> }
 ) {
-  const path = params.apple
+  // 2. Await the params
+  const resolvedParams = await params
+  const path = resolvedParams.apple
 
   if (path[0] === 'devices' && path[2] === 'registrations') {
     if (!isValidAuth(request)) {
@@ -104,14 +104,15 @@ export async function DELETE(
   return new NextResponse(null, { status: 404 })
 }
 
-// Handle Device Asking for Updated Passes or Latest .pkpass file
 export async function GET(
   request: Request,
-  { params }: { params: { apple: string[] } }
+  // 1. Update the type to Promise
+  { params }: { params: Promise<{ apple: string[] }> }
 ) {
-  const path = params.apple
+  // 2. Await the params
+  const resolvedParams = await params
+  const path = resolvedParams.apple
 
-  // 1. iPhone asking: "Which serial numbers changed for this device?"
   if (path[0] === 'devices' && path[2] === 'registrations') {
     const deviceLibraryIdentifier = path[1]
     const passTypeIdentifier = path[3]
@@ -124,26 +125,23 @@ export async function GET(
       .eq('pass_type_identifier', passTypeIdentifier)
 
     if (!data || data.length === 0) {
-      return new NextResponse(null, { status: 204 }) // No content
+      return new NextResponse(null, { status: 204 })
     }
 
-    // Return array of updated serial numbers and modification tag
     return NextResponse.json({
       serialNumbers: data.map((row) => row.serial_number),
       lastUpdated: new Date().toISOString(),
     })
   }
 
-  // 2. iPhone asking: "Send me the new .pkpass file for this serial number"
   if (path[0] === 'passes') {
     if (!isValidAuth(request)) {
       return new NextResponse(null, { status: 401 })
     }
 
-    const serialNumber = path[2] // customer_id UUID
+    const serialNumber = path[2] 
     const supabase = getSupabase()
 
-    // Fetch customer and business details to generate updated pass
     const { data: customer } = await supabase
       .from('customers')
       .select('*, loyalty_balances(current_stamps)')
@@ -156,7 +154,6 @@ export async function GET(
 
     const currentStamps = customer.loyalty_balances?.[0]?.current_stamps || 0
 
-    // Fetch the updated pass buffer from your main Apple Pass generator endpoint
     const passResponse = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}`
     )
