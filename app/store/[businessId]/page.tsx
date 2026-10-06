@@ -255,7 +255,7 @@ export default function CustomerCheckPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-2">
         
         {storeStatus === 'INACTIVE' ? (
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-8 text-center animate-in fade-in">
@@ -268,18 +268,18 @@ export default function CustomerCheckPage() {
         ) : storeStatus === 'ACTIVE' ? (
           <>
             {/* --- LOYALTY LOOKUP CARD --- */}
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-8">
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-5">
               {searchState !== 'FOUND' ? (
-                <div className="space-y-6">
-                  <form onSubmit={handleCheckStamps} className="space-y-6">
-                    <div className="text-center mb-6">
+                <div className="space-y-3">
+                  <form onSubmit={handleCheckStamps} className="space-y-3">
+                    <div className="text-center mb-4">
                       <h2 className="text-xl font-bold text-gray-800">Check Your Stamps</h2>
                     </div>
                     <input
                       type="tel"
                       required
                       placeholder="Phone Number (e.g., 0123456789)"
-                      className="w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-4 text-gray-900 focus:ring-2 outline-none transition-all"
+                      className="w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-3 text-gray-900 focus:ring-2 outline-none transition-all"
                       style={{ outlineColor: primaryColor }}
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
@@ -292,18 +292,18 @@ export default function CustomerCheckPage() {
                     <button
                       type="submit"
                       disabled={searchState === 'LOADING'}
-                      className="w-full px-4 py-4 rounded-xl font-bold text-lg transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                      className="w-full px-4 py-3 rounded-xl font-bold text-lg transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
                       style={{ backgroundColor: primaryColor, color: secondaryColor }}
                     >
                       {searchState === 'LOADING' ? 'Looking up...' : 'Check Balance'}
                     </button>
                   </form>
 
-                  <div className="pt-6 border-t border-gray-100 text-center">
+                  <div className="pt-3 border-t border-gray-100 text-center">
                     <p className="text-sm text-gray-500 mb-3">Not a member yet?</p>
                     <Link
                       href={`/store/${businessId}/register`}
-                      className="block w-full px-4 py-4 rounded-xl font-bold text-lg transition-colors hover:bg-gray-50 border border-gray-200"
+                      className="block w-full px-4 py-3 rounded-xl font-bold text-lg transition-colors hover:bg-gray-50 border border-gray-200"
                       style={{ color: primaryColor }}
                     >
                       Register for Rewards
