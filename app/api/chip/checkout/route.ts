@@ -27,8 +27,8 @@ export async function POST(request: Request) {
       reference: businessId,
       
       // Updated paths to return directly to /dashboard/subscription
-      success_redirect: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/subscription?payment=success`,
-      failure_redirect: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/subscription?payment=failed`,
+      success_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?payment=success`,
+      failure_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?payment=failed`,
       
       client: {
         email: customerEmail,
