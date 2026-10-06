@@ -65,12 +65,11 @@ export default function CustomerCheckPage() {
 
   const supabase = createClient()
 
-  // app/store/[businessId]/page.tsx
   useEffect(() => {
     async function fetchStoreDetails() {
       if (!businessId) return
 
-      // 1. Fetch Core Business Data & Customizations
+      // 1. Fetch Core Business Data & Unified Customizations
       const { data: bData } = await supabase
         .from('businesses')
         .select(`
@@ -79,12 +78,16 @@ export default function CustomerCheckPage() {
           google_review_threshold, 
           subscription_status,
           business_customizations (
-            theme_color, 
-            stamp_icon_preset, 
-            portal_bg_type, 
-            portal_bg_value, 
-            stamp_icon_url, 
-            logo_url
+            logo_url,
+            primary_color,
+            secondary_color,
+            bg_type,
+            bg_color,
+            bg_pattern,
+            portal_bg_image_url,
+            stamp_type,
+            stamp_preset,
+            stamp_custom_url
           )
         `)
         .eq('id', businessId)
@@ -101,12 +104,23 @@ export default function CustomerCheckPage() {
           : bData.business_customizations
 
         if (custom) {
-          if (custom.theme_color) setThemeColor(custom.theme_color)
-          if (custom.stamp_icon_preset) setStampIconKey(custom.stamp_icon_preset) 
-          if (custom.stamp_icon_url) setStampIconUrl(custom.stamp_icon_url)
-          if (custom.portal_bg_type) setPortalBgType(custom.portal_bg_type as 'color' | 'pattern' | 'image')
-          if (custom.portal_bg_value) setPortalBgValue(custom.portal_bg_value)
           if (custom.logo_url) setLogoUrl(custom.logo_url)
+          if (custom.primary_color) setThemeColor(custom.primary_color) // Mapped to your theme color state
+          
+          // Unified Stamp mappings
+          if (custom.stamp_preset) setStampIconKey(custom.stamp_preset)
+          if (custom.stamp_custom_url) setStampIconUrl(custom.stamp_custom_url)
+          
+          // Unified Background mappings
+          if (custom.bg_type) setPortalBgType(custom.bg_type as 'color' | 'pattern' | 'image')
+          
+          if (custom.bg_type === 'image') {
+            if (custom.portal_bg_image_url) setPortalBgValue(custom.portal_bg_image_url)
+          } else if (custom.bg_type === 'pattern') {
+            if (custom.bg_pattern) setPortalBgValue(custom.bg_pattern)
+          } else {
+            if (custom.bg_color) setPortalBgValue(custom.bg_color)
+          }
         }
       }
 
@@ -309,7 +323,7 @@ export default function CustomerCheckPage() {
                           key={index} 
                           className={`w-14 h-14 rounded-full flex items-center justify-center shadow-sm transition-all duration-500 ${
                             isStamped 
-                              ? `${activeTheme.bg} text-white scale-110${activeTheme.shadow}` 
+                              ? `${activeTheme.bg} text-white scale-110 ${activeTheme.shadow}` 
                               : 'bg-gray-100/80 text-gray-300 border-2 border-dashed border-gray-200'
                           }`}
                         >
