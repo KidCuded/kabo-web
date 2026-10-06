@@ -19,7 +19,6 @@
     "ogl": "^1.0.11",
     "passkit-generator": "^3.6.1",
     "qrcode.react": "^4.2.0",
-    "razorpay": "^2.9.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-easy-crop": "^6.2.3"

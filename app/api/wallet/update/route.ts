@@ -4,18 +4,16 @@ import { JWT } from 'google-auth-library'
 
 export async function POST(request: Request) {
   try {
-    const { businessId, phoneNumber, newStampCount } = await request.json()
+    // 1. Accept the heroImageUrl as a new parameter
+    const { businessId, phoneNumber, newStampCount, heroImageUrl } = await request.json()
 
     if (!businessId || !phoneNumber || newStampCount === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
-    
-    // Reconstruct the exact Object ID we created during registration
     const objectId = `${issuerId}.${businessId.replace(/-/g, '')}-${phoneNumber.replace(/\D/g, '')}`
 
-    // 1. Initialize the Auth Client (Same as Class creation)
     const credentials = new JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
       key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
@@ -23,15 +21,21 @@ export async function POST(request: Request) {
     })
 
     // 2. Define the Patch Payload
-    // We only send the fields that are changing. Google keeps the rest intact.
-    const patchBody = {
+    const patchBody: any = {
       loyaltyPoints: {
         balance: { int: newStampCount },
         label: 'Stamps'
       }
     }
 
-    // 3. Send the PATCH request to Google
+    // 3. If a new dynamic hero image is provided, add it to the payload to override the Class
+    if (heroImageUrl) {
+      patchBody.heroImage = {
+        sourceUri: { uri: heroImageUrl },
+        description: `Stamp count ${newStampCount}`
+      }
+    }
+
     const url = `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${objectId}`
     
     const response = await credentials.request({

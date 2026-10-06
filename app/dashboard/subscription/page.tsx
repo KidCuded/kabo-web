@@ -73,42 +73,45 @@ export default function SubscriptionPage() {
     }
   }
 
-  const handleCurlecCheckout = async () => {
+  const handleChipCheckout = async () => {
     setIsLoading(true)
     
     try {
-      const response = await fetch('/api/curlec/checkout', { method: 'POST' })
+      const { data: userData } = await supabase.auth.getUser()
+      if (!userData.user) throw new Error('Not authenticated')
+
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('id, store_name')
+        .eq('auth_user_id', userData.user.id)
+        .single()
+
+      if (!business) throw new Error('Business record not found')
+
+      const response = await fetch('/api/chip/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: business.id,
+          customerEmail: userData.user.email,
+          customerName: business.store_name
+        })
+      })
+
       const data = await response.json()
       
-      if (!response.ok) throw new Error(data.error)
+      if (!response.ok) throw new Error(data.error || 'Failed to initiate CHIP checkout')
 
-      const script = document.createElement('script')
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-      script.onload = () => {
-        
-        const options = {
-          key: process.env.NEXT_PUBLIC_CURLEC_KEY_ID, 
-          subscription_id: data.subscriptionId,
-          name: 'KABO Pro',
-          description: 'Monthly Subscription via FPX',
-          theme: {
-            color: '#2563EB',
-          },
-          handler: function (response: any) {
-            alert('Payment mandate authorized successfully!')
-          },
-        }
-
-        const paymentObject = new (window as any).Razorpay(options)
-        paymentObject.open()
-        setIsLoading(false)
+      if (data.checkoutUrl) {
+        // Redirect user directly to CHIP's hosted payment page
+        window.location.href = data.checkoutUrl
+      } else {
+        throw new Error('No checkout URL received from gateway')
       }
-      
-      document.body.appendChild(script)
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout failed:', error)
-      alert('Failed to initiate checkout. Please try again.')
+      alert(error.message || 'Failed to initiate checkout. Please try again.')
       setIsLoading(false)
     }
   }
@@ -121,8 +124,7 @@ export default function SubscriptionPage() {
 
     setIsCancelling(true)
     try {
-      // Calls your backend route to securely communicate the cancellation to Curlec
-      const response = await fetch('/api/curlec/cancel', { method: 'POST' })
+      const response = await fetch('/api/chip/cancel', { method: 'POST' })
       const data = await response.json()
 
       if (!response.ok) throw new Error(data.error)
@@ -186,7 +188,7 @@ export default function SubscriptionPage() {
                   <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                   Pro Plan (Active)
                 </div>
-                <p className="text-gray-600 mb-6">Your account is active and billing automatically via Curlec.</p>
+                <p className="text-gray-600 mb-6">Your account is active and billing automatically via CHIP.</p>
                 
                 <button
                   onClick={handleCancelSubscription}
@@ -237,13 +239,13 @@ export default function SubscriptionPage() {
           </div>
 
           <button
-            onClick={handleCurlecCheckout}
+            onClick={handleChipCheckout}
             disabled={isLoading || status === 'active'}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Connecting to Curlec...' : status === 'active' ? 'You are on Pro' : 'Setup Auto-Debit (FPX)'}
+            {isLoading ? 'Redirecting to CHIP...' : status === 'active' ? 'You are on Pro' : 'Pay with CHIP (FPX & Cards)'}
           </button>
-          <p className="text-xs text-center text-gray-400 mt-4">Secure payment processing by Curlec</p>
+          <p className="text-xs text-center text-gray-400 mt-4">Secure payment processing by CHIP Asia</p>
         </div>
 
       </div>

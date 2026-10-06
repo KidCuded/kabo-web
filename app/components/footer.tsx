@@ -75,7 +75,7 @@ export default function Footer() {
         {/* Bottom Divider & Copyright */}
         <div className="border-t border-gray-900/80 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
           <p>© {new Date().getFullYear()} KABO. All rights reserved.</p>
-          <p>Powered by Curlec Secure Direct Debit</p>
+          {/* <p>Powered by Curlec Secure Direct Debit</p> */}
         </div>
       </div>
     </footer>
