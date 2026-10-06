@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 
 export default function SubscriptionPage() {
@@ -13,6 +14,16 @@ export default function SubscriptionPage() {
   const [isCancelling, setIsCancelling] = useState(false)
 
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const paymentStatus = searchParams.get('payment')
+
+  useEffect(() => {
+    if (paymentStatus === 'success') {
+      alert("Payment successful! Your account is now Pro.")
+    } else if (paymentStatus === 'failed') {
+      alert("Payment failed or was cancelled.")
+    }
+  }, [paymentStatus])
 
   useEffect(() => {
     async function fetchSubscription() {

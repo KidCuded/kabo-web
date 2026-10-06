@@ -24,14 +24,12 @@ export async function POST(request: Request) {
     // 3. Build the CHIP Purchase Payload
     const payload = {
       brand_id: process.env.CHIP_BRAND_ID,
+      reference: businessId,
       
-      // We pass the businessId as a 'reference' so your Webhook knows which business paid
-      reference: businessId, 
+      // Updated paths to return directly to /dashboard/subscription
+      success_redirect: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/subscription?payment=success`,
+      failure_redirect: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/subscription?payment=failed`,
       
-      // Where CHIP sends the user after they finish the payment page
-      success_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment=success`,
-      failure_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment=failed`,
-
       client: {
         email: customerEmail,
         full_name: customerName || 'Kabo Merchant',
@@ -41,7 +39,7 @@ export async function POST(request: Request) {
         currency: 'MYR',
         products: [
           {
-            name: 'Kabo Subscription', // Change this to your actual plan name
+            name: 'Kabo Loyalty Subscription',
             price: amountInCents,
           },
         ],
@@ -53,7 +51,8 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.CHIP_API_KEY}`,
+        'Authorization': `Bearer ${process.env.CHIP_API_KEY_TEST}`, // Use CHIP_API_KEY for production
+        //'Authorization': `Bearer ${process.env.CHIP_API_KEY}`,
       },
       body: JSON.stringify(payload),
     })
