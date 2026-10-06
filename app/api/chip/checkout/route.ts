@@ -29,9 +29,9 @@ export async function POST(request: Request) {
       reference: businessId, 
       
       // Where CHIP sends the user after they finish the payment page
-      success_redirect: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?payment=success`,
-      failure_redirect: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?payment=failed`,
-      
+      success_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment=success`,
+      failure_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?payment=failed`,
+
       client: {
         email: customerEmail,
         full_name: customerName || 'Kabo Merchant',

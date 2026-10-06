@@ -35,26 +35,30 @@ export async function POST(request: Request) {
 
     // 5. Handle Successful Payment
     if (event.event_name === 'purchase.paid') {
-      const businessId = event.reference 
-      const purchaseId = event.id
+      const businessId = event.reference // The business ID we passed during checkout
       
+      // CHIP's identifiers
+      const purchaseId = event.id
       const subscriptionToken = event.recurring_token || purchaseId
+      const clientId = event.client_id || event.client?.id
 
       const nextBillingDate = new Date()
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
 
+      // 👉 THIS is where they are saved to your database
       const { error } = await supabase
         .from('businesses')
         .update({ 
           subscription_status: 'active',
-          chip_subscription_id: subscriptionToken,
+          chip_subscription_id: subscriptionToken, 
+          chip_client_id: clientId, 
           next_billing_date: nextBillingDate.toISOString().split('T')[0]
         })
         .eq('id', businessId)
 
       if (error) throw error
       console.log(`CHIP Webhook: Business ${businessId} upgraded to Active`)
-    } 
+    }
     
     // 6. Handle Refunded Payments (Corrected Event Name)
     else if (event.event_name === 'payment.refunded') {
