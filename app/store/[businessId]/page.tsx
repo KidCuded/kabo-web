@@ -232,12 +232,12 @@ export default function CustomerCheckPage() {
     >
       
       {/* Header */}
-      <div className="text-center mb-10 flex flex-col items-center">
+      <div className="text-center mb-6 flex flex-col items-center">
         {logoUrl ? (
           <img 
             src={logoUrl} 
             alt={storeName} 
-            className="w-24 h-24 object-contain rounded-2xl mb-4 shadow-sm bg-white p-2 border border-gray-100" 
+            className="w-24 h-24 object-contain rounded-2xl mb-3 shadow-sm bg-white p-2 border border-gray-100" 
           />
         ) : (
           <div 
@@ -255,7 +255,7 @@ export default function CustomerCheckPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-md space-y-2">
+      <div className="w-full max-w-md space-y-3">
         
         {storeStatus === 'INACTIVE' ? (
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-8 text-center animate-in fade-in">
@@ -270,8 +270,8 @@ export default function CustomerCheckPage() {
             {/* --- LOYALTY LOOKUP CARD --- */}
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 p-5">
               {searchState !== 'FOUND' ? (
-                <div className="space-y-3">
-                  <form onSubmit={handleCheckStamps} className="space-y-3">
+                <div className="space-y-4">
+                  <form onSubmit={handleCheckStamps} className="space-y-4">
                     <div className="text-center mb-4">
                       <h2 className="text-xl font-bold text-gray-800">Check Your Stamps</h2>
                     </div>
