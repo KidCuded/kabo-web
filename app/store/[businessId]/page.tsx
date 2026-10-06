@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import { Star, Coffee, Scissors, Pizza, ShoppingBag, Award, Heart } from 'lucide-react'
 
-// 1. Map string names to actual Lucide React components
+// Map string names to actual Lucide React components
 const StampIconMap: Record<string, any> = {
   star: Star,
   coffee: Coffee,
@@ -18,38 +18,30 @@ const StampIconMap: Record<string, any> = {
   heart: Heart,
 }
 
-// 2. Expanded Theme Dictionary
-const ThemeStyles: Record<string, { bg: string; hoverBg: string; text: string; lightBg: string; border: string; shadow: string; iconBg: string; iconText: string }> = {
-  blue: { bg: 'bg-blue-600', hoverBg: 'hover:bg-blue-500', text: 'text-blue-600', lightBg: 'bg-blue-50', border: 'border-blue-100', shadow: 'shadow-blue-200', iconBg: 'bg-blue-500/10', iconText: 'text-blue-600' },
-  emerald: { bg: 'bg-emerald-600', hoverBg: 'hover:bg-emerald-500', text: 'text-emerald-600', lightBg: 'bg-emerald-50', border: 'border-emerald-100', shadow: 'shadow-emerald-200', iconBg: 'bg-emerald-500/10', iconText: 'text-emerald-600' },
-  rose: { bg: 'bg-rose-600', hoverBg: 'hover:bg-rose-500', text: 'text-rose-600', lightBg: 'bg-rose-50', border: 'border-rose-100', shadow: 'shadow-rose-200', iconBg: 'bg-rose-500/10', iconText: 'text-rose-600' },
-  amber: { bg: 'bg-amber-600', hoverBg: 'hover:bg-amber-500', text: 'text-amber-600', lightBg: 'bg-amber-50', border: 'border-amber-100', shadow: 'shadow-amber-200', iconBg: 'bg-amber-500/10', iconText: 'text-amber-600' },
-  dark: { bg: 'bg-gray-900', hoverBg: 'hover:bg-gray-800', text: 'text-gray-900', lightBg: 'bg-gray-100', border: 'border-gray-200', shadow: 'shadow-gray-200', iconBg: 'bg-gray-200', iconText: 'text-gray-900' },
-  violet: { bg: 'bg-violet-600', hoverBg: 'hover:bg-violet-500', text: 'text-violet-600', lightBg: 'bg-violet-50', border: 'border-violet-100', shadow: 'shadow-violet-200', iconBg: 'bg-violet-500/10', iconText: 'text-violet-600' },
-  cyan: { bg: 'bg-cyan-600', hoverBg: 'hover:bg-cyan-500', text: 'text-cyan-600', lightBg: 'bg-cyan-50', border: 'border-cyan-100', shadow: 'shadow-cyan-200', iconBg: 'bg-cyan-500/10', iconText: 'text-cyan-600' },
-  orange: { bg: 'bg-orange-600', hoverBg: 'hover:bg-orange-500', text: 'text-orange-600', lightBg: 'bg-orange-50', border: 'border-orange-100', shadow: 'shadow-orange-200', iconBg: 'bg-orange-500/10', iconText: 'text-orange-600' },
-}
-
 export default function CustomerCheckPage() {
   const params = useParams()
   const businessId = params.businessId as string
 
   // Store Info State
-  const [storeName, setStoreName] = useState('Loading Store...')
+  const [storeName, setStoreName] = useState('')
   const [threshold, setThreshold] = useState(10)
   const [rewardDesc, setRewardDesc] = useState('Reward')
   const [reviewUrl, setReviewUrl] = useState('')
   const [reviewThreshold, setReviewThreshold] = useState(4)
+  const [storeStatus, setStoreStatus] = useState<'LOADING' | 'INACTIVE' | 'ACTIVE'>('LOADING')
   
-  // Customization State
-  const [themeColor, setThemeColor] = useState('blue')
+  // --- UNIFIED BRAND KIT STATE ---
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [primaryColor, setPrimaryColor] = useState('#2563EB')
+  const [secondaryColor, setSecondaryColor] = useState('#FFFFFF')
+  
+  const [bgType, setBgType] = useState<'color' | 'pattern' | 'image'>('color')
+  const [bgColor, setBgColor] = useState('#f9fafb')
+  const [bgPattern, setBgPattern] = useState('clean')
+  const [portalBgUrl, setPortalBgUrl] = useState<string | null>(null)
+  
   const [stampIconKey, setStampIconKey] = useState('star')
   const [stampIconUrl, setStampIconUrl] = useState<string | null>(null)
-  const [portalBgType, setPortalBgType] = useState<'color' | 'pattern' | 'image'>('color')
-  const [portalBgValue, setPortalBgValue] = useState('#f9fafb')
-  const [logoUrl, setLogoUrl] = useState<string | null>(null)
-
-  const [storeStatus, setStoreStatus] = useState<'LOADING' | 'INACTIVE' | 'ACTIVE'>('LOADING')
 
   // Customer Loyalty State
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -85,7 +77,6 @@ export default function CustomerCheckPage() {
             bg_color,
             bg_pattern,
             portal_bg_image_url,
-            stamp_type,
             stamp_preset,
             stamp_custom_url
           )
@@ -97,7 +88,6 @@ export default function CustomerCheckPage() {
         if (bData.store_name) setStoreName(bData.store_name)
         if (bData.google_review_url) setReviewUrl(bData.google_review_url)
         if (bData.google_review_threshold !== null) setReviewThreshold(bData.google_review_threshold) 
-        setStoreStatus(bData.subscription_status === 'inactive' ? 'INACTIVE' : 'ACTIVE')
         
         const custom = Array.isArray(bData.business_customizations) 
           ? bData.business_customizations[0] 
@@ -105,26 +95,23 @@ export default function CustomerCheckPage() {
 
         if (custom) {
           if (custom.logo_url) setLogoUrl(custom.logo_url)
-          if (custom.primary_color) setThemeColor(custom.primary_color) // Mapped to your theme color state
+          if (custom.primary_color) setPrimaryColor(custom.primary_color)
+          if (custom.secondary_color) setSecondaryColor(custom.secondary_color)
           
-          // Unified Stamp mappings
+          if (custom.bg_type) setBgType(custom.bg_type as 'color' | 'pattern' | 'image')
+          if (custom.bg_color) setBgColor(custom.bg_color)
+          if (custom.bg_pattern) setBgPattern(custom.bg_pattern)
+          if (custom.portal_bg_image_url) setPortalBgUrl(custom.portal_bg_image_url)
+          
           if (custom.stamp_preset) setStampIconKey(custom.stamp_preset)
           if (custom.stamp_custom_url) setStampIconUrl(custom.stamp_custom_url)
-          
-          // Unified Background mappings
-          if (custom.bg_type) setPortalBgType(custom.bg_type as 'color' | 'pattern' | 'image')
-          
-          if (custom.bg_type === 'image') {
-            if (custom.portal_bg_image_url) setPortalBgValue(custom.portal_bg_image_url)
-          } else if (custom.bg_type === 'pattern') {
-            if (custom.bg_pattern) setPortalBgValue(custom.bg_pattern)
-          } else {
-            if (custom.bg_color) setPortalBgValue(custom.bg_color)
-          }
         }
+        
+        // Update status last so all branding states are set before render
+        setStoreStatus(bData.subscription_status === 'inactive' ? 'INACTIVE' : 'ACTIVE')
       }
 
-      // 2. Fetch Loyalty Rules from its dedicated table
+      // 2. Fetch Loyalty Rules
       const { data: rData } = await supabase
         .from('loyalty_rules')
         .select('stamp_threshold, reward_description')
@@ -208,30 +195,34 @@ export default function CustomerCheckPage() {
     setIsSubmitting(false)
   }
 
-  // Resolve active theme and stamp icon components safely
-  const activeTheme = ThemeStyles[themeColor] || ThemeStyles.blue
   const SelectedStampIcon = StampIconMap[stampIconKey] || Star
 
-  // Dynamic Background Resolvers
+  // --- DYNAMIC BACKGROUND HELPERS ---
   const getPortalBackgroundStyle = () => {
-    if (portalBgType === 'image' && portalBgValue) {
-      return {
-        backgroundImage: `url(${portalBgValue})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }
+    if (bgType === 'image' && portalBgUrl) {
+      return { backgroundImage: `url(${portalBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
     }
-    if (portalBgType === 'color') return { backgroundColor: portalBgValue }
-    return {} 
+    return { backgroundColor: bgColor }
   }
 
   const getPortalPatternClass = () => {
-    if (portalBgType === 'pattern') {
-      if (portalBgValue === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
-      if (portalBgValue === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
+    if (bgType === 'pattern') {
+      if (bgPattern === 'dots') return 'bg-[radial-gradient(rgba(0,0,0,0.1)_2px,transparent_2px)] [background-size:16px_16px]'
+      if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.05)_1px,transparent_1px)] bg-[size:24px_24px]'
+      if (bgPattern === 'diagonal') return 'bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(0,0,0,0.03)_10px,rgba(0,0,0,0.03)_20px)]'
     }
-    return 'bg-gray-50' 
+    return '' 
+  }
+  // --- PREVENT HYDRATION MISMATCH ---
+  if (storeStatus === 'LOADING') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading store...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -240,7 +231,7 @@ export default function CustomerCheckPage() {
       style={getPortalBackgroundStyle()}
     >
       
-      {/* Header with Custom Logo Support */}
+      {/* Header */}
       <div className="text-center mb-10 flex flex-col items-center">
         {logoUrl ? (
           <img 
@@ -249,12 +240,19 @@ export default function CustomerCheckPage() {
             className="w-24 h-24 object-contain rounded-2xl mb-4 shadow-sm bg-white p-2 border border-gray-100" 
           />
         ) : (
-          <div className={`w-20 h-20 ${activeTheme.iconBg} ${activeTheme.iconText} rounded-3xl flex items-center justify-center mb-4 shadow-sm border border-gray-100`}>
-            <span className="font-black text-4xl">{(storeName || 'K').charAt(0).toUpperCase()}</span>
+          <div 
+            className="w-20 h-20 rounded-3xl flex items-center justify-center mb-4 shadow-sm border border-gray-100"
+            style={{ backgroundColor: primaryColor, color: secondaryColor }}
+          >
+            <span className="font-black text-4xl">{(storeName || 'S').charAt(0).toUpperCase()}</span>
           </div>
         )}
-        <h1 className="text-4xl font-black text-gray-900 tracking-tight">{storeName}</h1>
-        <p className="text-gray-500 mt-2 font-medium bg-white/50 px-4 py-1 rounded-full backdrop-blur-sm border border-gray-200/50">Customer Loyalty Portal</p>
+        <h1 className="text-4xl font-black tracking-tight" style={{ color: bgType === 'image' ? '#fff' : '#111827', textShadow: bgType === 'image' ? '0 2px 4px rgba(0,0,0,0.5)' : 'none' }}>
+          {storeName}
+        </h1>
+        <p className="text-gray-600 mt-2 font-medium bg-white/80 px-4 py-1 rounded-full backdrop-blur-sm border border-gray-200/50 shadow-sm">
+          Customer Loyalty Portal
+        </p>
       </div>
 
       <div className="w-full max-w-md space-y-6">
@@ -281,7 +279,8 @@ export default function CustomerCheckPage() {
                       type="tel"
                       required
                       placeholder="Phone Number (e.g., 0123456789)"
-                      className={`w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-4 text-gray-900 focus:ring-2 outline-none transition-all`}
+                      className="w-full text-center text-xl tracking-wider rounded-xl border border-gray-300 px-4 py-4 text-gray-900 focus:ring-2 outline-none transition-all"
+                      style={{ outlineColor: primaryColor }}
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                     />
@@ -293,7 +292,8 @@ export default function CustomerCheckPage() {
                     <button
                       type="submit"
                       disabled={searchState === 'LOADING'}
-                      className={`w-full ${activeTheme.bg} ${activeTheme.hoverBg} text-white px-4 py-4 rounded-xl font-bold text-lg transition-colors disabled:opacity-50 shadow-md ${activeTheme.shadow}`}
+                      className="w-full px-4 py-4 rounded-xl font-bold text-lg transition-opacity hover:opacity-90 disabled:opacity-50 shadow-md"
+                      style={{ backgroundColor: primaryColor, color: secondaryColor }}
                     >
                       {searchState === 'LOADING' ? 'Looking up...' : 'Check Balance'}
                     </button>
@@ -303,7 +303,8 @@ export default function CustomerCheckPage() {
                     <p className="text-sm text-gray-500 mb-3">Not a member yet?</p>
                     <Link
                       href={`/store/${businessId}/register`}
-                      className={`block w-full ${activeTheme.lightBg} ${activeTheme.text} hover:opacity-80 px-4 py-4 rounded-xl font-bold text-lg transition-colors`}
+                      className="block w-full px-4 py-4 rounded-xl font-bold text-lg transition-colors hover:bg-gray-50 border border-gray-200"
+                      style={{ color: primaryColor }}
                     >
                       Register for Rewards
                     </Link>
@@ -321,11 +322,10 @@ export default function CustomerCheckPage() {
                       return (
                         <div 
                           key={index} 
-                          className={`w-14 h-14 rounded-full flex items-center justify-center shadow-sm transition-all duration-500 ${
-                            isStamped 
-                              ? `${activeTheme.bg} text-white scale-110 ${activeTheme.shadow}` 
-                              : 'bg-gray-100/80 text-gray-300 border-2 border-dashed border-gray-200'
+                          className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 ${
+                            isStamped ? 'scale-110 shadow-md' : 'bg-gray-100/80 text-gray-300 border-2 border-dashed border-gray-200'
                           }`}
+                          style={isStamped ? { backgroundColor: primaryColor, color: secondaryColor } : {}}
                         >
                           {isStamped ? (
                             stampIconUrl ? (
@@ -344,7 +344,10 @@ export default function CustomerCheckPage() {
                       🎉 You earned: {rewardDesc}!
                     </div>
                   ) : (
-                    <div className={`${activeTheme.lightBg} ${activeTheme.text} border ${activeTheme.border} py-3 px-4 rounded-xl font-medium text-sm mb-6`}>
+                    <div 
+                      className="border py-3 px-4 rounded-xl font-medium text-sm mb-6"
+                      style={{ backgroundColor: `${primaryColor}10`, borderColor: `${primaryColor}30`, color: primaryColor }} 
+                    >
                       Only {customer ? threshold - customer.stamps : ''} more stamps to unlock: <span className="font-bold">{rewardDesc}</span>
                     </div>
                   )}
@@ -423,7 +426,8 @@ export default function CustomerCheckPage() {
                         href={reviewUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-2 ${activeTheme.bg} ${activeTheme.hoverBg} text-white px-6 py-4 rounded-xl font-bold transition-colors w-full justify-center shadow-md ${activeTheme.shadow}`}
+                        className="inline-flex items-center gap-2 px-6 py-4 rounded-xl font-bold transition-opacity hover:opacity-90 w-full justify-center shadow-md"
+                        style={{ backgroundColor: primaryColor, color: secondaryColor }}
                       >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"/></svg>
                         Leave a Google Review

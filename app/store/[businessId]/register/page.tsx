@@ -7,18 +7,6 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { registerCustomer } from '@/app/actions/registerCustomer'
 
-// Expanded Theme Dictionary mapped to Tailwind classes
-const ThemeStyles: Record<string, { bg: string; hoverBg: string; text: string; iconBg: string; iconText: string }> = {
-  blue: { bg: 'bg-blue-600', hoverBg: 'hover:bg-blue-500', text: 'text-white', iconBg: 'bg-blue-50', iconText: 'text-blue-600' },
-  emerald: { bg: 'bg-emerald-600', hoverBg: 'hover:bg-emerald-500', text: 'text-white', iconBg: 'bg-emerald-50', iconText: 'text-emerald-600' },
-  rose: { bg: 'bg-rose-600', hoverBg: 'hover:bg-rose-500', text: 'text-white', iconBg: 'bg-rose-50', iconText: 'text-rose-600' },
-  amber: { bg: 'bg-amber-600', hoverBg: 'hover:bg-amber-500', text: 'text-white', iconBg: 'bg-amber-50', iconText: 'text-amber-600' },
-  dark: { bg: 'bg-gray-900', hoverBg: 'hover:bg-gray-800', text: 'text-white', iconBg: 'bg-gray-100', iconText: 'text-gray-900' },
-  violet: { bg: 'bg-violet-600', hoverBg: 'hover:bg-violet-500', text: 'text-white', iconBg: 'bg-violet-50', iconText: 'text-violet-600' },
-  cyan: { bg: 'bg-cyan-600', hoverBg: 'hover:bg-cyan-500', text: 'text-white', iconBg: 'bg-cyan-50', iconText: 'text-cyan-600' },
-  orange: { bg: 'bg-orange-600', hoverBg: 'hover:bg-orange-500', text: 'text-white', iconBg: 'bg-orange-50', iconText: 'text-orange-600' },
-}
-
 export default function CustomerRegistration() {
   const params = useParams()
   const businessId = params.businessId as string
@@ -36,12 +24,16 @@ export default function CustomerRegistration() {
   const [isLoadingWallet, setIsLoadingWallet] = useState(false)
   const [isGeneratingApple, setIsGeneratingApple] = useState(false)
 
-  // Branding State
+  // --- UNIFIED BRAND KIT STATE ---
   const [storeName, setStoreName] = useState('Kabo Loyalty Programs')
-  const [themeColor, setThemeColor] = useState('blue')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [portalBgType, setPortalBgType] = useState<'color' | 'pattern' | 'image'>('color')
-  const [portalBgValue, setPortalBgValue] = useState('#f9fafb')
+  const [primaryColor, setPrimaryColor] = useState('#2563EB')
+  const [secondaryColor, setSecondaryColor] = useState('#FFFFFF')
+  
+  const [bgType, setBgType] = useState<'color' | 'pattern' | 'image'>('color')
+  const [bgColor, setBgColor] = useState('#f9fafb')
+  const [bgPattern, setBgPattern] = useState('clean')
+  const [portalBgUrl, setPortalBgUrl] = useState<string | null>(null)
 
   // app/store/[businessId]/register/page.tsx
   useEffect(() => {
@@ -53,10 +45,13 @@ export default function CustomerRegistration() {
         .select(`
           store_name,
           business_customizations (
-            theme_color, 
-            portal_bg_type, 
-            portal_bg_value, 
-            logo_url
+            logo_url,
+            primary_color,
+            secondary_color,
+            bg_type,
+            bg_color,
+            bg_pattern,
+            portal_bg_image_url
           )
         `)
         .eq('id', businessId)
@@ -70,10 +65,14 @@ export default function CustomerRegistration() {
           : data.business_customizations
 
         if (custom) {
-          if (custom.theme_color) setThemeColor(custom.theme_color)
           if (custom.logo_url) setLogoUrl(custom.logo_url)
-          if (custom.portal_bg_type) setPortalBgType(custom.portal_bg_type as 'color' | 'pattern' | 'image')
-          if (custom.portal_bg_value) setPortalBgValue(custom.portal_bg_value)
+          if (custom.primary_color) setPrimaryColor(custom.primary_color)
+          if (custom.secondary_color) setSecondaryColor(custom.secondary_color)
+          
+          if (custom.bg_type) setBgType(custom.bg_type as 'color' | 'pattern' | 'image')
+          if (custom.bg_color) setBgColor(custom.bg_color)
+          if (custom.bg_pattern) setBgPattern(custom.bg_pattern)
+          if (custom.portal_bg_image_url) setPortalBgUrl(custom.portal_bg_image_url)
         }
       }
     }
@@ -161,30 +160,27 @@ export default function CustomerRegistration() {
       setIsGeneratingApple(false)
     }
   }
-
-  // Resolve dynamic branding styles
-  const activeTheme = ThemeStyles[themeColor] || ThemeStyles.blue
   
-  // Dynamic Background Resolvers
+  // --- DYNAMIC BACKGROUND HELPERS ---
   const getPortalBackgroundStyle = () => {
-    if (portalBgType === 'image' && portalBgValue) {
+    if (bgType === 'image' && portalBgUrl) {
       return {
-        backgroundImage: `url(${portalBgValue})`,
+        backgroundImage: `url(${portalBgUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
       }
     }
-    if (portalBgType === 'color') return { backgroundColor: portalBgValue }
-    return {} 
+    return { backgroundColor: bgColor }
   }
 
   const getPortalPatternClass = () => {
-    if (portalBgType === 'pattern') {
-      if (portalBgValue === 'dots') return 'bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] bg-gray-50'
-      if (portalBgValue === 'grid') return 'bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:24px_24px] bg-gray-50'
+    if (bgType === 'pattern') {
+      if (bgPattern === 'dots') return 'bg-[radial-gradient(rgba(0,0,0,0.1)_2px,transparent_2px)] [background-size:16px_16px]'
+      if (bgPattern === 'grid') return 'bg-[linear-gradient(to_right,rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.05)_1px,transparent_1px)] bg-[size:24px_24px]'
+      if (bgPattern === 'diagonal') return 'bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(0,0,0,0.03)_10px,rgba(0,0,0,0.03)_20px)]'
     }
-    return 'bg-gray-50' // Fallback
+    return '' 
   }
 
   if (status?.success) {
@@ -259,8 +255,11 @@ export default function CustomerRegistration() {
               className="w-16 h-16 object-contain rounded-xl mb-5 shadow-sm border border-gray-100 bg-white" 
             />
           ) : (
-            <div className={`w-14 h-14 ${activeTheme.iconBg} ${activeTheme.iconText} rounded-2xl flex items-center justify-center mb-5`}>
-              <span className="font-black text-3xl">{(storeName || 'K').charAt(0).toUpperCase()}</span>
+            <div 
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-gray-100"
+              style={{ backgroundColor: primaryColor, color: secondaryColor }}
+            >
+              <span className="font-black text-3xl">{(storeName || 'S').charAt(0).toUpperCase()}</span>
             </div>
           )}
           <h1 className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-2 text-center">
@@ -345,7 +344,8 @@ export default function CustomerRegistration() {
           <button 
             type="submit" 
             disabled={!termsAccepted || isSubmitting}
-            className={`w-full ${activeTheme.bg} ${activeTheme.hoverBg} ${activeTheme.text} font-bold py-4 rounded-xl text-base transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed`}
+            className="w-full font-bold py-4 rounded-xl text-base transition-opacity hover:opacity-90 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: primaryColor, color: secondaryColor }}
           >
             {isSubmitting ? 'Processing...' : 'Join Program'}
           </button>
