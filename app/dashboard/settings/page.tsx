@@ -200,16 +200,19 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">Stamps Required for Reward</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
+                  <select
                     required
-                    className="w-full md:w-1/3 rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
+                    className="w-full md:w-1/3 rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors bg-white cursor-pointer"
                     value={stampThreshold}
                     onChange={(e) => setStampThreshold(Number(e.target.value))}
-                  />
-                  <p className="text-sm text-gray-500 mt-2">The number of stamps a customer must collect to unlock the reward below.</p>
+                  >
+                    <option value={5}>5 Stamps</option>
+                    <option value={6}>6 Stamps</option>
+                    <option value={8}>8 Stamps</option>
+                    <option value={10}>10 Stamps</option>
+                    <option value={12}>12 Stamps</option>
+                  </select>
+                  <p className="text-sm text-gray-500 mt-2">Select the total number of stamps required to complete a loyalty pass.</p>
                 </div>
 
                 <div>
@@ -226,7 +229,6 @@ export default function SettingsPage() {
                 </div>
               </div>
             </section>
-
             {/* --- CARD 3: INTEGRATIONS --- */}
             <section className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
               <div className="mb-6 border-b border-gray-100 pb-4 flex items-center gap-2">

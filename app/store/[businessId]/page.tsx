@@ -65,31 +65,52 @@ export default function CustomerCheckPage() {
 
   const supabase = createClient()
 
+  // app/store/[businessId]/page.tsx
   useEffect(() => {
     async function fetchStoreDetails() {
       if (!businessId) return
 
+      // 1. Fetch Core Business Data & Customizations
       const { data: bData } = await supabase
         .from('businesses')
-        .select('store_name, google_review_url, google_review_threshold, subscription_status, theme_color, stamp_icon, portal_bg_type, portal_bg_value, stamp_icon_url, logo_url')
+        .select(`
+          store_name, 
+          google_review_url, 
+          google_review_threshold, 
+          subscription_status,
+          business_customizations (
+            theme_color, 
+            stamp_icon_preset, 
+            portal_bg_type, 
+            portal_bg_value, 
+            stamp_icon_url, 
+            logo_url
+          )
+        `)
         .eq('id', businessId)
         .single()
       
       if (bData) {
-        setStoreName(bData.store_name)
+        if (bData.store_name) setStoreName(bData.store_name)
         if (bData.google_review_url) setReviewUrl(bData.google_review_url)
         if (bData.google_review_threshold !== null) setReviewThreshold(bData.google_review_threshold) 
-        
         setStoreStatus(bData.subscription_status === 'inactive' ? 'INACTIVE' : 'ACTIVE')
         
-        if (bData.theme_color) setThemeColor(bData.theme_color)
-        if (bData.stamp_icon) setStampIconKey(bData.stamp_icon)
-        if (bData.stamp_icon_url) setStampIconUrl(bData.stamp_icon_url)
-        if (bData.portal_bg_type) setPortalBgType(bData.portal_bg_type as 'color' | 'pattern' | 'image')
-        if (bData.portal_bg_value) setPortalBgValue(bData.portal_bg_value)
-        if (bData.logo_url) setLogoUrl(bData.logo_url)
+        const custom = Array.isArray(bData.business_customizations) 
+          ? bData.business_customizations[0] 
+          : bData.business_customizations
+
+        if (custom) {
+          if (custom.theme_color) setThemeColor(custom.theme_color)
+          if (custom.stamp_icon_preset) setStampIconKey(custom.stamp_icon_preset) 
+          if (custom.stamp_icon_url) setStampIconUrl(custom.stamp_icon_url)
+          if (custom.portal_bg_type) setPortalBgType(custom.portal_bg_type as 'color' | 'pattern' | 'image')
+          if (custom.portal_bg_value) setPortalBgValue(custom.portal_bg_value)
+          if (custom.logo_url) setLogoUrl(custom.logo_url)
+        }
       }
 
+      // 2. Fetch Loyalty Rules from its dedicated table
       const { data: rData } = await supabase
         .from('loyalty_rules')
         .select('stamp_threshold, reward_description')
@@ -97,10 +118,11 @@ export default function CustomerCheckPage() {
         .single()
 
       if (rData) {
-        setThreshold(rData.stamp_threshold)
-        setRewardDesc(rData.reward_description)
+        if (rData.stamp_threshold) setThreshold(rData.stamp_threshold)
+        if (rData.reward_description) setRewardDesc(rData.reward_description)
       }
     }
+    
     fetchStoreDetails()
   }, [businessId])
 

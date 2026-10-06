@@ -43,22 +43,38 @@ export default function CustomerRegistration() {
   const [portalBgType, setPortalBgType] = useState<'color' | 'pattern' | 'image'>('color')
   const [portalBgValue, setPortalBgValue] = useState('#f9fafb')
 
+  // app/store/[businessId]/register/page.tsx
   useEffect(() => {
     async function fetchBranding() {
       if (!businessId) return
       
       const { data } = await supabase
         .from('businesses')
-        .select('store_name, theme_color, portal_bg_type, portal_bg_value, logo_url')
+        .select(`
+          store_name,
+          business_customizations (
+            theme_color, 
+            portal_bg_type, 
+            portal_bg_value, 
+            logo_url
+          )
+        `)
         .eq('id', businessId)
         .single()
       
       if (data) {
         if (data.store_name) setStoreName(data.store_name)
-        if (data.theme_color) setThemeColor(data.theme_color)
-        if (data.logo_url) setLogoUrl(data.logo_url)
-        if (data.portal_bg_type) setPortalBgType(data.portal_bg_type as 'color' | 'pattern' | 'image')
-        if (data.portal_bg_value) setPortalBgValue(data.portal_bg_value)
+        
+        const custom = Array.isArray(data.business_customizations) 
+          ? data.business_customizations[0] 
+          : data.business_customizations
+
+        if (custom) {
+          if (custom.theme_color) setThemeColor(custom.theme_color)
+          if (custom.logo_url) setLogoUrl(custom.logo_url)
+          if (custom.portal_bg_type) setPortalBgType(custom.portal_bg_type as 'color' | 'pattern' | 'image')
+          if (custom.portal_bg_value) setPortalBgValue(custom.portal_bg_value)
+        }
       }
     }
     fetchBranding()
