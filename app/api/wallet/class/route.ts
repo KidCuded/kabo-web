@@ -45,15 +45,13 @@ export async function POST(request: Request) {
     })
 
     const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
-    const classId = `${issuerId}.${businessId}` // Unique class per business
+    const classId = `${issuerId}.${businessId}`  // Unique class per business
 
     // 3. Construct the Google Wallet LoyaltyClass payload
     const loyaltyClass = {
       id: classId,
       issuerName: businessData.store_name,
-      programName: {
-        defaultValue: { language: 'en-US', value: `${businessData.store_name} Rewards` }
-      },
+      programName: `${businessData.store_name} Rewards`,
       programLogo: {
         sourceUri: { uri: custom.logo_url }
       },

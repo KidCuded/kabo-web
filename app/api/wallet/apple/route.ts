@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { PKPass } from 'passkit-generator'
 import { createClient } from '@supabase/supabase-js'
+import { generateStripBuffer } from '@/utils/generateStrip'
 
 export const dynamic = 'force-dynamic' 
 
@@ -95,8 +96,11 @@ export async function GET(request: Request) {
         foregroundColor: hexToRgb(custom.secondary_color || '#FFFFFF'),
         
         storeCard: {
+          primaryFields: [
+            { key: 'program', label: 'REWARDS', value: businessData.store_name }
+          ],
           secondaryFields: [
-            { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
+            { key: 'stamps', label: 'STAMPS COLLECTED', value: currentStamps.toString() }
           ]
         }
       })),
@@ -134,12 +138,12 @@ export async function GET(request: Request) {
     // This checks for the raw uploaded hero image.
     // Later, when you build the dynamic generation route, we will swap this URL 
     // for something like: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/dynamic-strip?businessId=${businessId}&stamps=${currentStamps}`
-    if (custom.wallet_hero_image_url) {
-      const stripBuffer = await fetchImageAsBuffer(custom.wallet_hero_image_url)
-      if (stripBuffer) {
-        pass.addBuffer('strip.png', stripBuffer)
-        pass.addBuffer('strip@2x.png', stripBuffer) 
-      } 
+    try {
+      const dynamicStripBuffer = await generateStripBuffer(businessId, currentStamps)
+      pass.addBuffer('strip.png', dynamicStripBuffer)
+      pass.addBuffer('strip@2x.png', dynamicStripBuffer)
+    } catch (err) {
+      console.error("Failed to generate Apple dynamic strip", err)
     }
 
     const passBuffer = await pass.getAsBuffer()
