@@ -37,7 +37,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const businessId = searchParams.get('businessId')
     const customerId = searchParams.get('customerId')
-    const customerName = searchParams.get('customerName') || 'Valued Customer'
+    // customerName is passed but not actively printed on the standard storeCard front by default
+    const customerName = searchParams.get('customerName') || 'Valued Customer' 
     const phoneNumber = searchParams.get('phoneNumber') || ''
     const currentStamps = parseInt(searchParams.get('currentStamps') || '0', 10)
 
@@ -46,35 +47,53 @@ export async function GET(request: Request) {
     }
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-    const { data: business } = await supabase
+    
+    // 1. Fetch from the unified Brand Kit
+    const { data: businessData } = await supabase
       .from('businesses')
-      .select('store_name, pass_bg_color, pass_text_color, logo_url, wallet_hero_url')
+      .select(`
+        store_name, 
+        business_customizations (
+          logo_url, 
+          primary_color, 
+          secondary_color, 
+          wallet_hero_image_url
+        )
+      `)
       .eq('id', businessId)
       .single()
 
-    if (!business) throw new Error('Business not found')
+    if (!businessData) throw new Error('Business not found')
+    
+    // Safely unwrap the joined custom data
+    const custom = Array.isArray(businessData.business_customizations) 
+      ? businessData.business_customizations[0] 
+      : businessData.business_customizations
 
-    if (!business.logo_url) {
+    if (!custom?.logo_url) {
       throw new Error('Merchant must upload a Store Logo before generating Apple Wallet passes.')
     }
 
-    // 1. Initialize pass
+    // 2. Initialize pass with Unified Colors
     const pass = new PKPass({
       'pass.json': Buffer.from(JSON.stringify({
         formatVersion: 1,
-        passTypeIdentifier: 'pass.my.kabo',
-        serialNumber: customerId, // Customer UUID from Supabase
+        passTypeIdentifier: 'pass.my.kabo', // Ensure this matches your Apple Developer account exactly
+        serialNumber: customerId, 
         teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
         
         // Webhook communication endpoints
         webServiceURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple/webhook`,
         authenticationToken: process.env.APPLE_WEB_SERVICE_AUTH_TOKEN,
 
-        organizationName: business.store_name,
-        description: `${business.store_name} Loyalty Card`,
-        logoText: business.store_name,
-        backgroundColor: hexToRgb(business.pass_bg_color),
-        foregroundColor: hexToRgb(business.pass_text_color),
+        organizationName: businessData.store_name,
+        description: `${businessData.store_name} Loyalty Card`,
+        logoText: businessData.store_name,
+        
+        // Feed the unified colors in
+        backgroundColor: hexToRgb(custom.primary_color || '#2563EB'),
+        foregroundColor: hexToRgb(custom.secondary_color || '#FFFFFF'),
+        
         storeCard: {
           secondaryFields: [
             { key: 'stamps', label: 'STAMPS', value: currentStamps.toString() }
@@ -90,7 +109,7 @@ export async function GET(request: Request) {
     // Explicitly lock in the pass type to bypass strict validation errors
     pass.type = 'storeCard'
     
-    // 2. Properly inject the barcode using passkit-generator's method
+    // 3. Properly inject the barcode using passkit-generator's method
     if (phoneNumber) {
       pass.setBarcodes({
         message: phoneNumber,
@@ -100,9 +119,9 @@ export async function GET(request: Request) {
       })
     }
 
-    // 3. Image buffer injection
-    if (business.logo_url) {
-      const logoBuffer = await fetchImageAsBuffer(business.logo_url)
+    // 4. Image buffer injection
+    if (custom.logo_url) {
+      const logoBuffer = await fetchImageAsBuffer(custom.logo_url)
       if (!logoBuffer) {
           throw new Error('Failed to fetch required store logo image.') 
       }
@@ -112,11 +131,14 @@ export async function GET(request: Request) {
       pass.addBuffer('icon@2x.png', logoBuffer)
     }
 
-    if (business.wallet_hero_url) {
-      const stripBuffer = await fetchImageAsBuffer(business.wallet_hero_url)
+    // This checks for the raw uploaded hero image.
+    // Later, when you build the dynamic generation route, we will swap this URL 
+    // for something like: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/dynamic-strip?businessId=${businessId}&stamps=${currentStamps}`
+    if (custom.wallet_hero_image_url) {
+      const stripBuffer = await fetchImageAsBuffer(custom.wallet_hero_image_url)
       if (stripBuffer) {
         pass.addBuffer('strip.png', stripBuffer)
-        pass.addBuffer('strip@2x.png', stripBuffer) // Good practice to include @2x for strips as well
+        pass.addBuffer('strip@2x.png', stripBuffer) 
       } 
     }
 

@@ -227,7 +227,7 @@ export default function CustomerCheckPage() {
 
   return (
     <div 
-      className={`min-h-screen flex flex-col items-center py-12 px-4 sm:px-6 pb-24 transition-colors duration-300 ${getPortalPatternClass()}`}
+      className={`min-h-dvh flex flex-col items-center py-12 px-4 sm:px-6 pb-24 transition-colors duration-300 ${getPortalPatternClass()}`}
       style={getPortalBackgroundStyle()}
     >
       

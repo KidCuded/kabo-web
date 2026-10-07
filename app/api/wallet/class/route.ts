@@ -1,83 +1,86 @@
 // app/api/wallet/class/route.ts
 import { NextResponse } from 'next/server'
-import { JWT } from 'google-auth-library'
+import { createClient } from '@supabase/supabase-js'
+import { GoogleAuth } from 'google-auth-library'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const { businessId, storeName, logoUrl, passBackgroundColor, heroImageUrl } = body
+    const { businessId } = await request.json()
 
-    if (!businessId || !storeName) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!businessId) {
+      return NextResponse.json({ error: 'Missing businessId' }, { status: 400 })
     }
 
-    const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
-    const classId = `${issuerId}.${businessId.replace(/-/g, '')}` 
+    // 1. Fetch the Unified Brand Kit from Supabase
+    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const { data: businessData } = await supabase
+      .from('businesses')
+      .select(`
+        store_name, 
+        business_customizations (
+          logo_url, 
+          primary_color, 
+          secondary_color, 
+          wallet_hero_image_url
+        )
+      `)
+      .eq('id', businessId)
+      .single()
 
-    const credentials = new JWT({
-      email: process.env.GOOGLE_CLIENT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    if (!businessData) throw new Error('Business not found')
+    
+    const custom = Array.isArray(businessData.business_customizations) 
+      ? businessData.business_customizations[0] 
+      : businessData.business_customizations
+
+    if (!custom?.logo_url) {
+      throw new Error('Merchant must upload a Store Logo before syncing to Google Wallet.')
+    }
+
+    // 2. Authenticate with Google Wallet API
+    const auth = new GoogleAuth({
+      credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON || '{}'),
       scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
     })
+    const client = await auth.getClient()
+    const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID
+    const classId = `${issuerId}.${businessId}` // Unique class per business
 
-    
+    // 3. Construct the Google Wallet LoyaltyClass payload
     const loyaltyClass = {
       id: classId,
-      issuerName: storeName,
-      programName: storeName,
-      hexBackgroundColor: passBackgroundColor,
-      reviewStatus: 'UNDER_REVIEW', // <-- Required by Google to save images
-      
-      programLogo: logoUrl ? {
-        sourceUri: { uri: logoUrl },
-        contentDescription: {
-          defaultValue: { language: 'en-US', value: 'Store Logo' }
-        }
-      } : undefined,
-      
-      heroImage: heroImageUrl ? {
-        sourceUri: { uri: heroImageUrl },
-        contentDescription: {
-          defaultValue: { language: 'en-US', value: 'Hero Banner' }
-        }
-      } : undefined,
+      issuerName: businessData.store_name,
+      programName: {
+        defaultValue: { language: 'en-US', value: `${businessData.store_name} Rewards` }
+      },
+      programLogo: {
+        sourceUri: { uri: custom.logo_url }
+      },
+      reviewStatus: 'UNDER_REVIEW',
+      hexBackgroundColor: custom.primary_color || '#2563EB', // Mapped to the unified Primary Color
+      heroImage: custom.wallet_hero_image_url ? {
+        sourceUri: { uri: custom.wallet_hero_image_url }
+      } : undefined
     }
-    
-    console.log(heroImageUrl);
 
-    const baseUrl = 'https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass'
+    // 4. Upsert the Class to Google
+    const classUrl = `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass`
     
-    try {
-      // 1. Attempt to CREATE the class
-      const response = await credentials.request({
-        url: baseUrl,
-        method: 'POST',
-        data: loyaltyClass,
-      })
-      return NextResponse.json({ success: true, classId, action: 'created', data: response.data })
-      
-    } catch (apiError: any) {
-      // 2. If it already exists (409 Conflict), UPDATE the class instead
-      if (apiError.response?.status === 409) {
-        const updateUrl = `${baseUrl}/${classId}`
-        
-        const updateResponse = await credentials.request({
-          url: updateUrl,
-          method: 'PUT',
-          data: loyaltyClass,
-        })
-        return NextResponse.json({ success: true, classId, action: 'updated', data: updateResponse.data })
-      }
-      
-      // If it's a different error, throw it to the outer catch block
-      throw apiError
+    // First, check if it exists
+    const checkRes = await client.request({ url: `${classUrl}/${classId}`, method: 'GET' }).catch(() => null)
+    
+    if (checkRes) {
+      // Update existing class
+      await client.request({ url: `${classUrl}/${classId}`, method: 'PUT', data: loyaltyClass })
+    } else {
+      // Create new class
+      await client.request({ url: classUrl, method: 'POST', data: loyaltyClass })
     }
+
+    return NextResponse.json({ success: true, classId })
 
   } catch (error: any) {
-    console.error('Google Wallet API Error:', error.response?.data || error.message)
-    return NextResponse.json(
-      { error: 'Failed to manage Wallet Class', details: error.response?.data || error.message }, 
-      { status: 500 }
-    )
+    console.error('GOOGLE WALLET CLASS ERROR:', error)
+    return NextResponse.json({ error: error.message || 'Failed to sync Google Wallet Class' }, { status: 500 })
   }
 }

@@ -490,8 +490,8 @@ export default function CustomizationPage() {
               </section>
 
               <div className="flex justify-end pt-4">
-                <button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl font-bold text-lg transition-colors w-full lg:w-auto shadow-md active:scale-95">
-                  {isSaving ? 'Saving Brand Kit...' : 'Save & Publish Global Brand'}
+                <button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl font-bold text-lg transition-colors w-full lg:w-auto shadow-md disabled:opacity-50 active:scale-95">
+                  {isSaving ? 'Saving Brand Kit...' : 'Save & Publish'}
                 </button>
               </div>
 
