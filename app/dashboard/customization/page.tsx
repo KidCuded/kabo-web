@@ -245,24 +245,9 @@ export default function CustomizationPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          businessId: bData.id,
-          storeName: storeName, 
-          logoUrl: logoUrl,
-          passBackgroundColor: primaryColor,
-          heroImageUrl: walletHeroUrl 
-        })
-      })
-
-      // Sync specific fields to Google Wallet Generator
-      await fetch('/api/wallet/update-class', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
           businessId: bData.id
         })
       })
-
-      setToastMessage('Global Brand Kit Saved Successfully!')
 
       setToastMessage('Global Brand Kit Saved Successfully!')
       setTimeout(() => setToastMessage(''), 3000)
