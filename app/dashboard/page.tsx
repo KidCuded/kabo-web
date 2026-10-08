@@ -220,7 +220,7 @@ export default function DashboardPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             businessId: businessId,
-            phoneNumber: customer.phone,
+            customerId: customer.id, // Changed this to pass the UUID directly
             newStampCount: newStampCount
           })
         })

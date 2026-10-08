@@ -22,6 +22,9 @@ export async function POST(request: Request) {
           primary_color, 
           secondary_color, 
           wallet_hero_image_url
+        ),
+        loyalty_rules (
+          program_name
         )
       `)
       .eq('id', businessId)
@@ -29,6 +32,9 @@ export async function POST(request: Request) {
 
     if (!businessData) throw new Error('Business not found')
     
+    const rules = Array.isArray(businessData.loyalty_rules) 
+      ? businessData.loyalty_rules[0] 
+      : businessData.loyalty_rules
     const custom = Array.isArray(businessData.business_customizations) 
       ? businessData.business_customizations[0] 
       : businessData.business_customizations
@@ -51,7 +57,7 @@ export async function POST(request: Request) {
     const loyaltyClass = {
       id: classId,
       issuerName: businessData.store_name,
-      programName: `${businessData.store_name} Rewards`,
+      programName: rules?.program_name || 'Loyalty Program',  // Fallback if not set
       programLogo: {
         sourceUri: { uri: custom.logo_url }
       },

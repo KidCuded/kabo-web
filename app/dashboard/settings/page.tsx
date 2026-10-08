@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [address, setAddress] = useState('')
   
   // Program Settings State
+  const [programName, setProgramName] = useState('')
   const [stampThreshold, setStampThreshold] = useState<number | ''>(10)
   const [rewardDescription, setRewardDescription] = useState('')
   const [googleReviewUrl, setGoogleReviewUrl] = useState('') 
@@ -45,11 +46,12 @@ export default function SettingsPage() {
 
           const { data: ruleData } = await supabase
             .from('loyalty_rules')
-            .select('stamp_threshold, reward_description')
+            .select('program_name, stamp_threshold, reward_description')
             .eq('business_id', businessData.id)
             .single()
 
           if (ruleData) {
+            setProgramName(ruleData.program_name || '')
             setStampThreshold(ruleData.stamp_threshold)
             setRewardDescription(ruleData.reward_description)
           }
@@ -92,6 +94,7 @@ export default function SettingsPage() {
         .from('loyalty_rules')
         .upsert({
           business_id: businessData.id,
+          program_name: programName,
           stamp_threshold: Number(stampThreshold),
           reward_description: rewardDescription,
           updated_at: new Date().toISOString()
@@ -197,6 +200,19 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-500 mt-1">Configure how customers earn and redeem rewards.</p>
               </div>
               
+              <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-2">Store Program Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., Coffee Club Rewards"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors"
+                    value={programName}
+                    onChange={(e) => setProgramName(e.target.value)}
+                  />
+                  <p className="text-sm text-gray-500 mt-2">Name your loyalty program.</p>
+                </div>
+
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 mb-2">Stamps Required for Reward</label>
