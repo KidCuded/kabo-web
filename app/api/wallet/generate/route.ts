@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       accountId: customerId,
       accountName: customerName,
       loyaltyPoints: {
-        balance: { string: currentStamps.toString() },
+        balance: { string: `${currentStamps} of ${threshold}` },
         label: 'STAMPS'
       },
       barcode: {
@@ -94,13 +94,6 @@ export async function POST(request: Request) {
         value: phoneNumber,
         alternateText: phoneNumber
       },
-      textModulesData: [
-        {
-          id: 'stamp_progress',
-          header: 'Stamps',
-          body: `${currentStamps} of ${threshold}` // Renders text directly below the QR code
-        }
-      ],
       heroImage: {
         sourceUri: {
           // Dynamic image generation endpoint, cache busted with Date timestamp

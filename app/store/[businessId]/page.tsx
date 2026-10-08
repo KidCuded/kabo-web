@@ -304,7 +304,7 @@ export default function CustomerCheckPage() {
                     <Link
                       href={`/store/${businessId}/register`}
                       className="block w-full px-4 py-3 rounded-xl font-bold text-lg transition-colors hover:bg-gray-50 border border-gray-200"
-                      style={{ color: primaryColor }}
+                      style={{ background : secondaryColor, color: primaryColor }}
                     >
                       Register for Rewards
                     </Link>
