@@ -27,10 +27,10 @@ export const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<F
     canvas.toBlob((blob) => {
       if (blob) {
         // Convert Blob to File to match your existing Supabase upload logic
-        resolve(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
+        resolve(new File([blob], 'cropped.png', { type: 'image/png' }))
       } else {
         reject(new Error('Canvas is empty'))
       }
-    }, 'image/jpeg', 0.95)
+    }, 'image/png', 0.95)
   })
 }

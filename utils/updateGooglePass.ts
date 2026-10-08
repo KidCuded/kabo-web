@@ -7,7 +7,7 @@ const parseEnv = (val?: string) => {
   return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
 }
 
-export async function pushGoogleWalletUpdate(businessId: string, customerId: string, newStamps: number) {
+export async function pushGoogleWalletUpdate(businessId: string, customerId: string, newStamps: number, threshold: number) {
   try {
     const clientEmail = parseEnv(process.env.GOOGLE_CLIENT_EMAIL)
     const privateKey = parseEnv(process.env.GOOGLE_PRIVATE_KEY)
@@ -26,15 +26,22 @@ export async function pushGoogleWalletUpdate(businessId: string, customerId: str
     
     const client = await auth.getClient()
 
-    // We send a PATCH request to update ONLY the points and the image URL
+    // We send a PATCH request to update points, text, and the image URL
     const updatePayload = {
       loyaltyPoints: {
         balance: { string: newStamps.toString() },
         label: 'STAMPS'
       },
+      // NEW: Update the text field below the QR code
+      textModulesData: [
+        {
+          id: 'stamp_progress',
+          header: 'Stamps',
+          body: `${newStamps} of ${threshold}`
+        }
+      ],
       heroImage: {
         sourceUri: {
-          // The new URL asks your engine to draw the updated stamps, and the new timestamp breaks Google's cache
           uri: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/dynamic-strip?businessId=${businessId}&stamps=${newStamps}&v=${Date.now()}`
         }
       }
