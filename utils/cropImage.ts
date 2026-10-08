@@ -1,5 +1,5 @@
 // utils/cropImage.ts
-export const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<File> => {
+export const getCroppedImg = async (imageSrc: string, pixelCrop: any, pendingCropType: string): Promise<File> => {
   const image = new Image()
   image.src = imageSrc
   await new Promise((resolve) => (image.onload = resolve))
@@ -10,6 +10,14 @@ export const getCroppedImg = async (imageSrc: string, pixelCrop: any): Promise<F
 
   canvas.width = pixelCrop.width
   canvas.height = pixelCrop.height
+
+  if (pendingCropType === 'stamp') {
+    ctx.beginPath()
+    const radius = Math.min(canvas.width, canvas.height) / 2
+    ctx.arc(canvas.width / 2, canvas.height / 2, radius, 0, 2 * Math.PI)
+    ctx.closePath()
+    ctx.clip()
+  }
 
   ctx.drawImage(
     image,

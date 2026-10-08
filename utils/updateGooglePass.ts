@@ -29,17 +29,9 @@ export async function pushGoogleWalletUpdate(businessId: string, customerId: str
     // We send a PATCH request to update points, text, and the image URL
     const updatePayload = {
       loyaltyPoints: {
-        balance: { string: newStamps.toString() },
+        balance: { string: `${newStamps} of ${threshold}` },
         label: 'STAMPS'
       },
-      // NEW: Update the text field below the QR code
-      textModulesData: [
-        {
-          id: 'stamp_progress',
-          header: 'Stamps',
-          body: `${newStamps} of ${threshold}`
-        }
-      ],
       heroImage: {
         sourceUri: {
           uri: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/dynamic-strip?businessId=${businessId}&stamps=${newStamps}&v=${Date.now()}`

@@ -191,7 +191,7 @@ export default function CustomizationPage() {
   const handleConfirmCrop = async () => {
     if (!imageSrc || !croppedAreaPixels || !pendingCropType) return
     try {
-      const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels)
+      const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels, pendingCropType)
       setCropModalOpen(false) 
       await uploadToSupabase(croppedFile, pendingCropType)
     } catch (e) {

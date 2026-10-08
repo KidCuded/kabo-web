@@ -286,14 +286,14 @@ export default function DashboardPage() {
 
       if (updateError) throw new Error('Failed to deduct stamps.')
 
-      // Sync deduction with Google Wallet
+      //--- SYNC WITH GOOGLE WALLET ---
       try {
         await fetch('/api/wallet/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             businessId: businessId,
-            phoneNumber: customer.phone,
+            customerId: customer.id, // Changed this to pass the UUID directly
             newStampCount: newStampCount
           })
         })
