@@ -253,6 +253,17 @@ export default function CustomizationPage() {
         })
       })
 
+      // Sync specific fields to Google Wallet Generator
+      await fetch('/api/wallet/update-class', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: bData.id
+        })
+      })
+
+      setToastMessage('Global Brand Kit Saved Successfully!')
+
       setToastMessage('Global Brand Kit Saved Successfully!')
       setTimeout(() => setToastMessage(''), 3000)
     } catch (err: any) {
