@@ -1,5 +1,6 @@
 // app/api/wallet/apple/webhook/v1/[...apple]/route.ts
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
@@ -11,23 +12,23 @@ function getSupabase() {
   )
 }
 
-function isValidAuth(request: Request) {
-  const authHeader = request.headers.get('Authorization')
+async function isValidAuth() {
+  const headersList = await headers()
+  const authHeader = headersList.get('authorization')
   const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
   return authHeader === expectedToken
 }
 
 export async function POST(
   request: Request,
-  // 1. Update the type to Promise
   { params }: { params: Promise<{ apple: string[] }> }
 ) {
-  // 2. Await the params before using them
   const resolvedParams = await params
   const path = resolvedParams.apple
 
   if (path[0] === 'devices' && path[2] === 'registrations') {
-    if (!isValidAuth(request)) {
+    const isAuthorized = await isValidAuth()
+    if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
 
@@ -76,15 +77,14 @@ export async function POST(
 
 export async function DELETE(
   request: Request,
-  // 1. Update the type to Promise
   { params }: { params: Promise<{ apple: string[] }> }
 ) {
-  // 2. Await the params
   const resolvedParams = await params
   const path = resolvedParams.apple
 
   if (path[0] === 'devices' && path[2] === 'registrations') {
-    if (!isValidAuth(request)) {
+    const isAuthorized = await isValidAuth()
+    if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
 
@@ -106,10 +106,8 @@ export async function DELETE(
 
 export async function GET(
   request: Request,
-  // 1. Update the type to Promise
   { params }: { params: Promise<{ apple: string[] }> }
 ) {
-  // 2. Await the params
   const resolvedParams = await params
   const path = resolvedParams.apple
 
@@ -135,7 +133,8 @@ export async function GET(
   }
 
   if (path[0] === 'passes') {
-    if (!isValidAuth(request)) {
+    const isAuthorized = await isValidAuth()
+    if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
 
@@ -155,7 +154,7 @@ export async function GET(
     const currentStamps = customer.loyalty_balances?.[0]?.current_stamps || 0
 
     const passResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}`
     )
 
     if (!passResponse.ok) {
