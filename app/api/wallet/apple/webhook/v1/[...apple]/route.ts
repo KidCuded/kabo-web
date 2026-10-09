@@ -12,11 +12,25 @@ function getSupabase() {
   )
 }
 
-async function isValidAuth() {
+async function isValidAuth(req: Request) {
+  // Log headers from the Next.js helper
   const headersList = await headers()
-  const authHeader = headersList.get('authorization')
-  const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
+  console.log('--- NEXT.JS HEADERS ---')
+  headersList.forEach((value, key) => console.log(`${key}: ${value}`))
   
+  // Log headers from the raw native Request object
+  console.log('--- RAW REQUEST HEADERS ---')
+  req.headers.forEach((value, key) => console.log(`${key}: ${value}`))
+
+  let authHeader = headersList.get('authorization')
+  if (!authHeader) {
+      authHeader = req.headers.get('authorization') || req.headers.get('Authorization')
+  }
+  if (!authHeader) {
+      authHeader = req.headers.get('x-middleware-request-authorization') 
+  }
+
+  const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
   return authHeader === expectedToken
 }
 
@@ -28,7 +42,7 @@ export async function POST(
   const path = resolvedParams.apple
 
   if (path[0] === 'devices' && path[2] === 'registrations') {
-    const isAuthorized = await isValidAuth()
+    const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
@@ -84,7 +98,7 @@ export async function DELETE(
   const path = resolvedParams.apple
 
   if (path[0] === 'devices' && path[2] === 'registrations') {
-    const isAuthorized = await isValidAuth()
+    const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
@@ -134,7 +148,7 @@ export async function GET(
   }
 
   if (path[0] === 'passes') {
-    const isAuthorized = await isValidAuth()
+    const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
