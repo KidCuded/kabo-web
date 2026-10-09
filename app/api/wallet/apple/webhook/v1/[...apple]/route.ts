@@ -16,6 +16,14 @@ async function isValidAuth() {
   const headersList = await headers()
   const authHeader = headersList.get('authorization')
   const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
+
+  // Temporary diagnostic logs
+  console.log('--- AUTH DIAGNOSTICS ---')
+  console.log('1. Received Header:', authHeader)
+  console.log('2. Expected Token:', expectedToken)
+  console.log('3. Exact Match:', authHeader === expectedToken)
+  console.log('------------------------')
+
   return authHeader === expectedToken
 }
 
