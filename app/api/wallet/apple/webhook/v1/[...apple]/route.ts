@@ -12,18 +12,24 @@ function getSupabase() {
   )
 }
 
-async function isValidAuth() {
+ async function isValidAuth(req: Request) {
+  // 1. Try Next.js parsed headers first
   const headersList = await headers()
-  const authHeader = headersList.get('Authorization')
+  let authHeader = headersList.get('authorization')
+  
+  // 2. Try the raw request object fallback
+  if (!authHeader) {
+      authHeader = req.headers.get('authorization') || req.headers.get('Authorization')
+  }
+
+  // 3. (Vercel specific fix) Check if the host moved it to custom headers
+  if (!authHeader) {
+      // Vercel sometimes stashes rejected auth headers in x-vercel-sc-headers or x-middleware-request-authorization
+      authHeader = req.headers.get('x-middleware-request-authorization') 
+  }
+
   const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
-
-  // Temporary diagnostic logs
-  console.log('--- AUTH DIAGNOSTICS ---')
-  console.log('1. Received Header:', authHeader)
-  console.log('2. Expected Token:', expectedToken)
-  console.log('3. Exact Match:', authHeader === expectedToken)
-  console.log('------------------------')
-
+  
   return authHeader === expectedToken
 }
 
@@ -35,7 +41,7 @@ export async function POST(
   const path = resolvedParams.apple
 
   if (path[0] === 'devices' && path[2] === 'registrations') {
-    const isAuthorized = await isValidAuth()
+    const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
@@ -91,7 +97,7 @@ export async function DELETE(
   const path = resolvedParams.apple
 
   if (path[0] === 'devices' && path[2] === 'registrations') {
-    const isAuthorized = await isValidAuth()
+    const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
@@ -141,7 +147,7 @@ export async function GET(
   }
 
   if (path[0] === 'passes') {
-    const isAuthorized = await isValidAuth()
+    const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
       return new NextResponse(null, { status: 401 })
     }
