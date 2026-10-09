@@ -14,7 +14,7 @@ function getSupabase() {
 
 async function isValidAuth() {
   const headersList = await headers()
-  const authHeader = headersList.get('authorization')
+  const authHeader = headersList.get('Authorization')
   const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
 
   // Temporary diagnostic logs
