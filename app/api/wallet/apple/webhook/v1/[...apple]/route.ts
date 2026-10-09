@@ -15,21 +15,7 @@ function getSupabase() {
 async function isValidAuth(req: Request) {
   // Log headers from the Next.js helper
   const headersList = await headers()
-  console.log('--- NEXT.JS HEADERS ---')
-  headersList.forEach((value, key) => console.log(`${key}: ${value}`))
-  
-  // Log headers from the raw native Request object
-  console.log('--- RAW REQUEST HEADERS ---')
-  req.headers.forEach((value, key) => console.log(`${key}: ${value}`))
-
   let authHeader = headersList.get('authorization')
-  if (!authHeader) {
-      authHeader = req.headers.get('authorization') || req.headers.get('Authorization')
-  }
-  if (!authHeader) {
-      authHeader = req.headers.get('x-middleware-request-authorization') 
-  }
-
   const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
   return authHeader === expectedToken
 }
@@ -169,7 +155,7 @@ export async function GET(
     const currentStamps = customer.loyalty_balances?.[0]?.current_stamps || 0
 
     const passResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}`
+      `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}`
     )
 
     if (!passResponse.ok) {
