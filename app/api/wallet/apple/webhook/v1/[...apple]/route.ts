@@ -168,6 +168,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
+        'last-modified': new Date().toUTCString(), // Apple requires this header
       },
     })
   }
