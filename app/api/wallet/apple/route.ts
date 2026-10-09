@@ -148,11 +148,19 @@ export async function GET(request: Request) {
 
     const passBuffer = await pass.getAsBuffer()
 
+    // return new NextResponse(new Uint8Array(passBuffer), {
+    //   status: 200,
+    //   headers: {
+    //     'Content-Type': 'application/vnd.apple.pkpass',
+    //     'Content-Disposition': 'attachment; filename="loyalty.pkpass"'
+    //   }
+    // })
+
     return new NextResponse(new Uint8Array(passBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Content-Disposition': 'attachment; filename="loyalty.pkpass"'
+        'Content-Disposition': 'attachment; filename="loyalty.zip"'
       }
     })
 
