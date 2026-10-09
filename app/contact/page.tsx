@@ -36,7 +36,7 @@ export default function ContactPage() {
               </div>
               <h2 className="text-xl font-bold text-white mb-3">General & Support</h2>
               <p className="text-sm text-gray-400 mb-8 flex-1 leading-relaxed">
-                Need help setting up your store, configuring Curlec, or managing your loyalty rules? Drop us a line.
+                Need help setting up your store, managing your loyalty rules or customization? Drop us a line.
               </p>
               <a 
                 href="mailto:akid@kabo.my" 
