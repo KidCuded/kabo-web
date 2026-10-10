@@ -33,6 +33,8 @@ export async function POST(
       return new NextResponse(null, { status: 401 })
     }
 
+    console.log('Apple Wallet Device Registration Request:', path)
+
     const deviceLibraryIdentifier = path[1]
     const passTypeIdentifier = path[3]
     const serialNumber = path[4]
@@ -70,35 +72,6 @@ export async function POST(
   if (path[0] === 'log') {
     const body = await request.json()
     console.log('Apple Wallet Client Log:', body)
-    return new NextResponse(null, { status: 200 })
-  }
-
-  return new NextResponse(null, { status: 404 })
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ apple: string[] }> }
-) {
-  const resolvedParams = await params
-  const path = resolvedParams.apple
-
-  if (path[0] === 'devices' && path[2] === 'registrations') {
-    const isAuthorized = await isValidAuth(request)
-    if (!isAuthorized) {
-      return new NextResponse(null, { status: 401 })
-    }
-
-    const deviceLibraryIdentifier = path[1]
-    const serialNumber = path[4]
-
-    const supabase = getSupabase()
-    await supabase
-      .from('apple_wallet_registrations')
-      .delete()
-      .eq('device_library_identifier', deviceLibraryIdentifier)
-      .eq('serial_number', serialNumber)
-
     return new NextResponse(null, { status: 200 })
   }
 
@@ -150,6 +123,8 @@ export async function GET(
       .select('*, loyalty_balances(current_stamps)')
       .eq('id', serialNumber)
       .single()
+    
+    console.log('New Stamp amount', customer.loyalty_balances?.[0]?.current_stamps);
 
     console.log('--- APPLE WALLET DATE DEBUG ---');
     console.log('1. Header from Apple:', ifModifiedSince);
@@ -198,6 +173,35 @@ export async function GET(
         'last-modified': passUpdatedAt.toUTCString(), 
       },
     })
+  }
+
+  return new NextResponse(null, { status: 404 })
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ apple: string[] }> }
+) {
+  const resolvedParams = await params
+  const path = resolvedParams.apple
+
+  if (path[0] === 'devices' && path[2] === 'registrations') {
+    const isAuthorized = await isValidAuth(request)
+    if (!isAuthorized) {
+      return new NextResponse(null, { status: 401 })
+    }
+
+    const deviceLibraryIdentifier = path[1]
+    const serialNumber = path[4]
+
+    const supabase = getSupabase()
+    await supabase
+      .from('apple_wallet_registrations')
+      .delete()
+      .eq('device_library_identifier', deviceLibraryIdentifier)
+      .eq('serial_number', serialNumber)
+
+    return new NextResponse(null, { status: 200 })
   }
 
   return new NextResponse(null, { status: 404 })

@@ -104,7 +104,7 @@ export async function GET(request: Request) {
                 key: 'stamps', 
                 label: 'STAMPS COLLECTED', 
                 // Ensure it never evaluates to "undefined"
-                value: currentStamps.toString() + ' of ' + (businessData?.loyalty_rules?.[0]?.stamp_threshold || 'N/A')
+                value: currentStamps.toString() + ' of ' + (businessData?.loyalty_rules?.[1]?.stamp_threshold || 'N/A')
               }
             ]
           }
