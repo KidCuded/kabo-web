@@ -75,6 +75,11 @@ export async function GET(request: Request) {
       ? businessData.business_customizations[0] 
       : businessData.business_customizations
 
+    // Safely unwrap the loyalty rules (Targeting index 0)
+    const rule = Array.isArray(businessData.loyalty_rules)
+    ? businessData.loyalty_rules[0]
+    : businessData.loyalty_rules
+
     if (!custom?.logo_url) {
       throw new Error('Merchant must upload a Store Logo before generating Apple Wallet passes.')
     }
@@ -104,7 +109,7 @@ export async function GET(request: Request) {
                 key: 'stamps', 
                 label: 'STAMPS COLLECTED', 
                 // Ensure it never evaluates to "undefined"
-                value: currentStamps.toString() + ' of ' + (businessData?.loyalty_rules?.[1]?.stamp_threshold || 'N/A')
+                value: String(`${currentStamps || 0} of ${rule?.stamp_threshold || 'N/A'}`)
               }
             ]
           }
