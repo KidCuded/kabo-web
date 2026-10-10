@@ -26,19 +26,22 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-      // Check if the error is the expected "not found" error
-      const isNotFoundError = error?.message?.includes('not found') || error?.status === 404;
+    // Safely extract and convert the entire error payload to a lowercase string
+    const errorMessage = String(error?.message || error?.response?.data || error).toLowerCase();
+    
+    // Broaden the check to catch nested API responses and standard 404 statuses
+    const isNotFoundError = errorMessage.includes('not found') || error?.status === 404 || error?.response?.status === 404;
 
-      if (isNotFoundError) {
-        // Silently exit without throwing a console error
-        return NextResponse.json({ 
-          success: true, 
-          message: 'No Google Wallet pass exists for this user yet. Skipped.' 
-        });
-      }
-
-      // If it is a real error, log it as usual
-      console.error('Failed to update Google Wallet:', error);
-      return NextResponse.json({ error: 'Failed to update Google Wallet' }, { status: 500 });
+    if (isNotFoundError) {
+      // Silently exit without throwing a console error for Apple Wallet users
+      return NextResponse.json({ 
+        success: true, 
+        message: 'No Google Wallet pass exists for this user yet. Skipped.' 
+      });
     }
+
+    // If it is a real error (like 500 or auth failure), log it as usual
+    console.error('Failed to update Google Wallet:', error);
+    return NextResponse.json({ error: 'Failed to update Google Wallet' }, { status: 500 });
+  }
 }

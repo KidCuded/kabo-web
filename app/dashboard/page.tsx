@@ -284,19 +284,29 @@ export default function DashboardPage() {
 
       if (updateError) throw new Error('Failed to deduct stamps.')
 
-      //--- SYNC WITH GOOGLE WALLET ---
-      try {
-        await fetch('/api/wallet/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            businessId: businessId,
-            customerId: customer.id, // Changed this to pass the UUID directly
-            newStampCount: newStampCount
+      //--- SYNC WITH WALLETS ---
+       try {
+        // Run both wallet syncs in parallel without blocking the UI
+        Promise.allSettled([
+          fetch('/api/wallet/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              businessId: businessId,
+              customerId: customer.id, 
+              newStampCount: newStampCount
+            })
+          }),
+          fetch('/api/wallet/apple-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customerId: customer.id
+            })
           })
-        })
+        ]);
       } catch (walletErr) {
-        console.error("Google Wallet sync skipped/failed:", walletErr)
+        console.error("Wallet sync failed:", walletErr);
       }
 
       setCustomer({ ...customer, stamps: newStampCount })
