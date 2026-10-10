@@ -129,6 +129,7 @@ export async function GET(
     console.log('--- APPLE WALLET DATE DEBUG ---');
     console.log('1. Header from Apple:', ifModifiedSince);
     console.log('2. Customer updated_at from DB:', customer.updated_at);
+    console.log('3. Current stamps from DB:', balance?.current_stamps);
 
     if (!customer) {
       return new NextResponse(null, { status: 404 })
