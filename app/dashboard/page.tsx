@@ -208,8 +208,7 @@ export default function DashboardPage() {
       const { error: customerError } = await supabase
         .from('customers')
         .update({
-          total_spent: newTotalSpent,
-          updated_at: new Date().toISOString()
+          total_spent: newTotalSpent
         })
         .eq('id', customer.id)
         
@@ -279,8 +278,7 @@ export default function DashboardPage() {
       const { error: updateError } = await supabase
         .from('loyalty_balances')
         .update({ 
-          current_stamps: newStampCount, 
-          updated_at: new Date().toISOString()
+          current_stamps: newStampCount
         })
         .eq('customer_id', customer.id)
         .eq('business_id', businessId)

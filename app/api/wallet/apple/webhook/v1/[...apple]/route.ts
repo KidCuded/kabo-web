@@ -104,74 +104,63 @@ export async function GET(
     })
   }
 
-  if (path[0] === 'passes') {
-    const isAuthorized = await isValidAuth(request)
-    if (!isAuthorized) {
-      return new NextResponse(null, { status: 401 })
-    }
-
-    const serialNumber = path[2] 
-    const supabase = getSupabase()
-
-    // 1. Extract Apple's timestamp from the request headers
-    const ifModifiedSince = request.headers.get('if-modified-since')
-
-    const { data: customer } = await supabase
-      .from('customers')
-      .select('*, loyalty_balances(current_stamps)')
-      .eq('id', serialNumber)
-      .single()
-    
-    const balance = Array.isArray(customer.loyalty_balances)
-    ? customer.loyalty_balances[0]
-    : customer.loyalty_balances
-
-    console.log('--- APPLE WALLET DATE DEBUG ---');
-    console.log('1. Header from Apple:', ifModifiedSince);
-    console.log('2. Customer updated_at from DB:', customer.updated_at);
-    console.log('3. Current stamps from DB:', balance?.current_stamps);
-
-    if (!customer) {
-      return new NextResponse(null, { status: 404 })
-    }
-
-    // 2. Set the database update time (fallback to now if missing)
-    const passUpdatedAt = customer.updated_at ? new Date(customer.updated_at) : new Date(0);
-
-    // 3. Compare timestamps and return 304 if unchanged
-    if (ifModifiedSince) {
-      const deviceDate = new Date(ifModifiedSince).getTime();
-      const dbDate = passUpdatedAt.getTime();
-      console.log(`3. Comparing - DB Date: ${dbDate} vs Device Date: ${deviceDate}`);
-
-      if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
-        console.log(`[304] Pass unchanged for ${serialNumber}. Sending 304.`);
-        return new NextResponse(null, { status: 304 });
-      }
-    }
-
-    const currentStamps = balance?.current_stamps || 0;
-
-    const passResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}`,
-      { cache: 'no-store' }
-    )
-
-    if (!passResponse.ok) {
-      return new NextResponse(null, { status: 500 })
-    }
-
-    const passArrayBuffer = await passResponse.arrayBuffer()
-
-    // 4. Return 200 with the accurate last-modified database time
-    return new NextResponse(new Uint8Array(passArrayBuffer), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/vnd.apple.pkpass',
-        'last-modified': passUpdatedAt.toUTCString(), 
-      },
-    })
+if (path[0] === 'passes') {
+  const isAuthorized = await isValidAuth(request)
+  if (!isAuthorized) {
+    return new NextResponse(null, { status: 401 })
   }
+
+  const serialNumber = path[2] // customerId
+  const supabase = getSupabase()
+
+  // 1. Join loyalty_balances and select the specific balance timestamp
+  const { data: customer } = await supabase
+    .from('customers')
+    .select('*, loyalty_balances(current_stamps, updated_at)')
+    .eq('id', serialNumber)
+    .single()
+
+  if (!customer) {
+    return new NextResponse(null, { status: 404 })
+  }
+
+  const loyaltyBalance = customer.loyalty_balances?.[0]
+  const currentStamps = loyaltyBalance?.current_stamps || 0
+  const passLastUpdated = loyaltyBalance?.updated_at || customer.updated_at
+
+  // 2. Evaluate if-modified-since against the balance timestamp
+  const ifModifiedSince = request.headers.get('if-modified-since')
+
+  if (ifModifiedSince && passLastUpdated) {
+    const deviceDate = new Date(ifModifiedSince).getTime()
+    const dbDate = new Date(passLastUpdated).getTime()
+
+    // Truncate to seconds matching HTTP header specs
+    if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
+      return new NextResponse(null, { status: 304 })
+    }
+  }
+
+  // 3. Fetch fresh pass payload
+  const passResponse = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}&lastUpdated=${encodeURIComponent(passLastUpdated)}`,
+    { cache: 'no-store' }
+  )
+
+  if (!passResponse.ok) {
+    return new NextResponse(null, { status: 500 })
+  }
+
+  const passArrayBuffer = await passResponse.arrayBuffer()
+
+  return new NextResponse(new Uint8Array(passArrayBuffer), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/vnd.apple.pkpass',
+      'last-modified': new Date(passLastUpdated).toUTCString(),
+    },
+  })
+}
 
   return new NextResponse(null, { status: 404 })
 }
