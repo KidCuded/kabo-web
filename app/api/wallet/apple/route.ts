@@ -39,6 +39,9 @@ export async function GET(request: Request) {
     const businessId = searchParams.get('businessId')
     const customerId = searchParams.get('customerId')
     const phoneNumber = searchParams.get('phoneNumber') || ''
+
+    console.log(searchParams.get('currentStamps'))
+
     const currentStamps = parseInt(searchParams.get('currentStamps') || '0', 10)
 
     console.log('Generating Apple Pass for:', { businessId, customerId, phoneNumber, currentStamps })
