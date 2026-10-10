@@ -54,6 +54,7 @@ export async function GET(request: Request) {
       .from('businesses')
       .select(`
         store_name, 
+        program_name,
         business_customizations (
           logo_url, 
           primary_color, 
@@ -76,53 +77,51 @@ export async function GET(request: Request) {
     }
 
     // 2. Initialize pass with Unified Colors
-    const pass = new PKPass({
-      'pass.json': Buffer.from(JSON.stringify({
-        formatVersion: 1,
-        passTypeIdentifier: 'pass.my.kabo', // Ensure this matches your Apple Developer account exactly
-        serialNumber: customerId, 
-        teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
-        
-        // Webhook communication endpoints
-        webServiceURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple/webhook`,
-        authenticationToken: process.env.APPLE_WEB_SERVICE_AUTH_TOKEN,
+    const pass = new PKPass(
+      {
+        'pass.json': Buffer.from(JSON.stringify({
+          formatVersion: 1,
+          passTypeIdentifier: 'pass.my.kabo', 
+          serialNumber: customerId, 
+          teamIdentifier: parseEnv(process.env.APPLE_TEAM_ID),
+          
+          webServiceURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple/webhook`,
+          authenticationToken: process.env.APPLE_WEB_SERVICE_AUTH_TOKEN,
 
-        organizationName: businessData.store_name,
-        description: `${businessData.store_name} Loyalty Card`,
-        logoText: businessData.store_name,
-        
-        // Feed the unified colors in
-        backgroundColor: hexToRgb(custom.primary_color),
-        foregroundColor: hexToRgb(custom.secondary_color),
-        
-        storeCard: {
-          primaryFields: [
-            { 
-              key: 'program', 
-              label: 'REWARDS', 
-              // Fallback to a hardcoded string if the variable is undefined
-              value: businessData.store_name 
-            }
-          ],
-          secondaryFields: [
-            { 
-              key: 'stamps', 
-              label: 'STAMPS COLLECTED', 
-              // Ensure it never evaluates to "undefined"
-              value: currentStamps.toString()
-            }
-          ]
-        }
-      })),
-    }, {
-      signerCert: parseEnv(process.env.APPLE_SIGNER_CERT),
-      signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
-      wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
-    })
+          organizationName: businessData?.store_name || 'My Store',
+          description: `${businessData?.store_name || 'Store'} Loyalty Card`,
+          logoText: businessData?.store_name || 'Rewards',
+          
+          backgroundColor: hexToRgb(custom.primary_color),
+          foregroundColor: hexToRgb(custom.secondary_color),
+          
+          storeCard: {
+            primaryFields: [
+              { 
+                key: 'program', 
+                label: 'REWARDS', 
+                // Fallback to a hardcoded string if the variable is undefined
+                value: businessData?.program_name || 'Loyalty Program'
+              }
+            ],
+            secondaryFields: [
+              { 
+                key: 'stamps', 
+                label: 'STAMPS COLLECTED', 
+                // Ensure it never evaluates to "undefined"
+                value: currentStamps.toString()
+              }
+            ]
+          }
+        }))
+      }, 
+      {
+        signerCert: parseEnv(process.env.APPLE_SIGNER_CERT),
+        signerKey: parseEnv(process.env.APPLE_SIGNER_KEY),
+        wwdr: parseEnv(process.env.APPLE_WWDR_CERT)
+      }
+    );
 
-    // Explicitly lock in the pass type to bypass strict validation errors
-    pass.type = 'storeCard'
-    
     // 3. Properly inject the barcode using passkit-generator's method
     if (phoneNumber) {
       pass.setBarcodes({
