@@ -1,0 +1,14 @@
+function formatCertForEnv(rawCertificate: string) {
+  // Replace all actual line breaks (Windows or Unix) with the literal string "\n"
+  const envFormatted = rawCertificate.replace(/\r?\n/g, '\\n');
+  return `"${envFormatted}"`; // Wraps it in quotes for your .env file
+}
+
+// Example usage:
+const myRawCert = `-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49
+abc123xyz
+-----END PRIVATE KEY-----`;
+
+console.log(formatCertForEnv(myRawCert));
+// Output: "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49\nabc123xyz\n-----END PRIVATE KEY-----"

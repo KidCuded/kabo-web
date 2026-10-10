@@ -101,7 +101,7 @@ export async function GET(request: Request) {
               key: 'program', 
               label: 'REWARDS', 
               // Fallback to a hardcoded string if the variable is undefined
-              value: businessData?.store_name || 'Loyalty Member' 
+              value: businessData.store_name 
             }
           ],
           secondaryFields: [
@@ -109,7 +109,7 @@ export async function GET(request: Request) {
               key: 'stamps', 
               label: 'STAMPS COLLECTED', 
               // Ensure it never evaluates to "undefined"
-              value: currentStamps ? currentStamps.toString() : '0' 
+              value: currentStamps.toString()
             }
           ]
         }
@@ -162,7 +162,7 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Content-Disposition': 'attachment; filename="loyalty.pkpass"'
+        'Content-Disposition': 'attachment; filename="loyalty.zip"'
       }
     })
 
