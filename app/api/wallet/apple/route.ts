@@ -161,7 +161,7 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Content-Disposition': 'attachment; filename="loyalty.zip"'
+        'Content-Disposition': 'attachment; filename="loyalty.pkpass"'
       }
     })
 
