@@ -1,42 +1,63 @@
 // utils/applePush.ts
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
+import http2 from 'http2';
 
 export async function sendAppleWalletPush(pushToken: string) {
-  console.log(`🚀 Sending Apple Wallet Push Notification to token: ${pushToken}`)
-  try {
-    const teamId = process.env.APPLE_TEAM_ID!
-    const keyId = process.env.APPLE_APNS_KEY_ID!
-    const privateKey = process.env.APPLE_APNS_KEY!.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
+  return new Promise((resolve) => {
+    try {
+      const teamId = process.env.APPLE_TEAM_ID!;
+      const keyId = process.env.APPLE_APNS_KEY_ID!;
+      const privateKey = process.env.APPLE_APNS_KEY!.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim();
 
-    // Generate JWT for APNs authentication
-    const token = jwt.sign(
-      { iss: teamId, iat: Math.floor(Date.now() / 1000) },
-      privateKey,
-      { algorithm: 'ES256', header: { alg: 'ES256', kid: keyId } }
-    )
+      const token = jwt.sign(
+        { iss: teamId, iat: Math.floor(Date.now() / 1000) },
+        privateKey,
+        { algorithm: 'ES256', header: { alg: 'ES256', kid: keyId } }
+      );
 
-    // Send push notification to APNs
-    const response = await fetch(`https://api.push.apple.com/3/device/${pushToken}`, {
-      method: 'POST',
-      headers: {
+      // Connect directly to Apple using HTTP/2
+      const client = http2.connect('https://api.push.apple.com');
+
+      client.on('error', (err) => {
+        console.error('❌ HTTP/2 Client Error:', err);
+        resolve({ success: false, error: err });
+      });
+
+      const req = client.request({
+        ':method': 'POST',
+        ':path': `/3/device/${pushToken}`,
         'authorization': `bearer ${token}`,
-        'apns-topic': 'pass.my.kabo', // Must match your Pass Type ID exactly
-      },
-      body: JSON.stringify({}) 
-    })
+        'apns-topic': 'pass.my.kabo', // Ensure this matches your Pass Type ID exactly
+      });
 
-    // Log the response for debugging
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`❌ APNs Push Failed [Status: ${response.status}]:`, errorText)
-      return { success: false, error: errorText }
+      req.on('response', (headers) => {
+        const status = headers[':status'];
+        let responseData = '';
+
+        req.on('data', (chunk) => {
+          responseData += chunk;
+        });
+
+        req.on('end', () => {
+          client.close(); 
+          
+          if (status !== 200) {
+            console.error(`❌ APNs Push Failed [Status: ${status}]:`, responseData);
+            resolve({ success: false, error: responseData });
+          } else {
+            console.log(`✅ APNs Push Successful for token: ${pushToken}`);
+            resolve({ success: true });
+          }
+        });
+      });
+
+      // Apple Wallet requires an empty JSON body
+      req.write(JSON.stringify({})); 
+      req.end();
+
+    } catch (error) {
+      console.error('❌ Error executing APNs push:', error);
+      resolve({ success: false, error });
     }
-
-    console.log(`✅ APNs Push Successful for token: ${pushToken}`)
-    return { success: true }
-    
-  } catch (error) {
-    console.error('❌ Error executing APNs push:', error)
-    return { success: false, error }
-  }
+  });
 }

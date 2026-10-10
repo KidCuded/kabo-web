@@ -26,7 +26,19 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error('WALLET UPDATE ROUTE ERROR:', error)
-    return NextResponse.json({ error: 'Failed to sync wallet update' }, { status: 500 })
-  }
+      // Check if the error is the expected "not found" error
+      const isNotFoundError = error?.message?.includes('not found') || error?.status === 404;
+
+      if (isNotFoundError) {
+        // Silently exit without throwing a console error
+        return NextResponse.json({ 
+          success: true, 
+          message: 'No Google Wallet pass exists for this user yet. Skipped.' 
+        });
+      }
+
+      // If it is a real error, log it as usual
+      console.error('Failed to update Google Wallet:', error);
+      return NextResponse.json({ error: 'Failed to update Google Wallet' }, { status: 500 });
+    }
 }
