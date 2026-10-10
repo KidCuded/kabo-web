@@ -38,10 +38,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const businessId = searchParams.get('businessId')
     const customerId = searchParams.get('customerId')
-    // customerName is passed but not actively printed on the standard storeCard front by default
-    const customerName = searchParams.get('customerName') || 'Valued Customer' 
     const phoneNumber = searchParams.get('phoneNumber') || ''
     const currentStamps = parseInt(searchParams.get('currentStamps') || '0', 10)
+
+    console.log('Generating Apple Pass for:', { businessId, customerId, phoneNumber, currentStamps })
 
     if (!businessId) {
       return NextResponse.json({ error: 'Missing businessId' }, { status: 400 })
