@@ -278,7 +278,10 @@ export default function DashboardPage() {
       const newStampCount = customer.stamps - stampsToDeduct
       const { error: updateError } = await supabase
         .from('loyalty_balances')
-        .update({ current_stamps: newStampCount })
+        .update({ 
+          current_stamps: newStampCount, 
+          updated_at: new Date().toISOString()
+        })
         .eq('customer_id', customer.id)
         .eq('business_id', businessId)
 
