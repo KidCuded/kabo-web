@@ -124,8 +124,11 @@ export async function GET(
       .eq('id', serialNumber)
       .single()
     
-    console.log('New Stamp amount', customer.loyalty_balances?.[0]?.current_stamps);
+    const balance = Array.isArray(customer.loyalty_balances)
+    ? customer.loyalty_balances[0]
+    : customer.loyalty_balances
 
+    console.log('New Stamp amount', balance?.current_stamps);
     console.log('--- APPLE WALLET DATE DEBUG ---');
     console.log('1. Header from Apple:', ifModifiedSince);
     console.log('2. Customer updated_at from DB:', customer.updated_at);
