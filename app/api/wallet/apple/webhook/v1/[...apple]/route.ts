@@ -126,6 +126,10 @@ export async function GET(
     ? customer.loyalty_balances[0]
     : customer.loyalty_balances
 
+    console.log('--- APPLE WALLET DATE DEBUG ---');
+    console.log('1. Header from Apple:', ifModifiedSince);
+    console.log('2. Customer updated_at from DB:', customer.updated_at);
+
     if (!customer) {
       return new NextResponse(null, { status: 404 })
     }
@@ -137,8 +141,10 @@ export async function GET(
     if (ifModifiedSince) {
       const deviceDate = new Date(ifModifiedSince).getTime();
       const dbDate = passUpdatedAt.getTime();
+      console.log(`3. Comparing - DB Date: ${dbDate} vs Device Date: ${deviceDate}`);
 
       if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
+        console.log(`[304] Pass unchanged for ${serialNumber}. Sending 304.`);
         return new NextResponse(null, { status: 304 });
       }
     }
