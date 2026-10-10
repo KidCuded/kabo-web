@@ -207,7 +207,10 @@ export default function DashboardPage() {
       const newTotalSpent = customer.totalSpent + spendValue
       const { error: customerError } = await supabase
         .from('customers')
-        .update({ total_spent: newTotalSpent })
+        .update({
+          total_spent: newTotalSpent,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', customer.id)
         
       if (customerError) throw new Error('Failed to update customer lifetime spending.')
