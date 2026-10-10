@@ -54,7 +54,9 @@ export async function GET(request: Request) {
       .from('businesses')
       .select(`
         store_name, 
-        program_name,
+        loyalty_rules (
+          program_name
+        ),
         business_customizations (
           logo_url, 
           primary_color, 
@@ -101,7 +103,7 @@ export async function GET(request: Request) {
                 key: 'program', 
                 label: 'REWARDS', 
                 // Fallback to a hardcoded string if the variable is undefined
-                value: businessData?.program_name || 'Loyalty Program'
+                value: businessData?.loyalty_rules?.[0]?.program_name || 'Loyalty Program'
               }
             ],
             secondaryFields: [
