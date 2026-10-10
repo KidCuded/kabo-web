@@ -151,24 +151,31 @@ export async function GET(
       .eq('id', serialNumber)
       .single()
 
+    console.log('--- APPLE WALLET DATE DEBUG ---');
+    console.log('1. Header from Apple:', ifModifiedSince);
+    console.log('2. Customer updated_at from DB:', customer.updated_at);
+
     if (!customer) {
       return new NextResponse(null, { status: 404 })
     }
 
     // 2. Set the database update time (fallback to now if missing)
-    const passUpdatedAt = customer.updated_at ? new Date(customer.updated_at) : new Date()
+    const passUpdatedAt = customer.updated_at ? new Date(customer.updated_at) : new Date(0);
 
     // 3. Compare timestamps and return 304 if unchanged
     if (ifModifiedSince) {
-      const deviceDate = new Date(ifModifiedSince).getTime()
-      const dbDate = passUpdatedAt.getTime()
+      const deviceDate = new Date(ifModifiedSince).getTime();
+      const dbDate = passUpdatedAt.getTime();
 
-      // Ignore milliseconds drift by rounding to seconds
+      console.log(`3. Comparing - DB Date: ${dbDate} vs Device Date: ${deviceDate}`);
+
       if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
-        console.log(`[304] Pass unchanged for ${serialNumber}. Sending 304.`)
-        return new NextResponse(null, { status: 304 })
+        console.log(`[304] Pass unchanged for ${serialNumber}. Sending 304.`);
+        return new NextResponse(null, { status: 304 });
       }
     }
+
+    console.log(`[200] Pass modified. Generating new pass...`);
 
     const currentStamps = customer.loyalty_balances?.[0]?.current_stamps || 0
 
