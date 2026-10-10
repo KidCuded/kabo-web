@@ -142,6 +142,9 @@ export async function GET(
     const serialNumber = path[2] 
     const supabase = getSupabase()
 
+    // 1. Extract Apple's timestamp from the request headers
+    const ifModifiedSince = request.headers.get('if-modified-since')
+
     const { data: customer } = await supabase
       .from('customers')
       .select('*, loyalty_balances(current_stamps)')
@@ -150,6 +153,21 @@ export async function GET(
 
     if (!customer) {
       return new NextResponse(null, { status: 404 })
+    }
+
+    // 2. Set the database update time (fallback to now if missing)
+    const passUpdatedAt = customer.updated_at ? new Date(customer.updated_at) : new Date()
+
+    // 3. Compare timestamps and return 304 if unchanged
+    if (ifModifiedSince) {
+      const deviceDate = new Date(ifModifiedSince).getTime()
+      const dbDate = passUpdatedAt.getTime()
+
+      // Ignore milliseconds drift by rounding to seconds
+      if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
+        console.log(`[304] Pass unchanged for ${serialNumber}. Sending 304.`)
+        return new NextResponse(null, { status: 304 })
+      }
     }
 
     const currentStamps = customer.loyalty_balances?.[0]?.current_stamps || 0
@@ -164,11 +182,12 @@ export async function GET(
 
     const passArrayBuffer = await passResponse.arrayBuffer()
 
+    // 4. Return 200 with the accurate last-modified database time
     return new NextResponse(new Uint8Array(passArrayBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'last-modified': new Date().toUTCString(), // Apple requires this header
+        'last-modified': passUpdatedAt.toUTCString(), 
       },
     })
   }
