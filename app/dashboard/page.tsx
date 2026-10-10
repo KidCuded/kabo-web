@@ -240,6 +240,7 @@ export default function DashboardPage() {
         await Promise.all(
           devices.map(device => sendAppleWalletPush(device.push_token))
         )
+        console.log(`Apple Wallet push sent to ${devices.length} device(s) for customer ${customer.id} with push tokens: ${devices.map(d => d.push_token).join(', ')}`)
       }
 
       // Update UI state
