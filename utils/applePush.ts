@@ -42,10 +42,8 @@ export async function sendAppleWalletPush(pushToken: string) {
           client.close(); 
           
           if (status !== 200) {
-            console.error(`❌ APNs Push Failed [Status: ${status}]:`, responseData);
             resolve({ success: false, error: responseData });
           } else {
-            console.log(`✅ APNs Push Successful for token: ${pushToken}`);
             resolve({ success: true });
           }
         });

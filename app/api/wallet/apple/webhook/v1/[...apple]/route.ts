@@ -33,8 +33,6 @@ export async function POST(
       return new NextResponse(null, { status: 401 })
     }
 
-    console.log('Apple Wallet Device Registration Request:', path)
-
     const deviceLibraryIdentifier = path[1]
     const passTypeIdentifier = path[3]
     const serialNumber = path[4]
@@ -71,7 +69,7 @@ export async function POST(
 
   if (path[0] === 'log') {
     const body = await request.json()
-    console.log('Apple Wallet Client Log:', body)
+    console.log('Apple Wallet Log:', body)
     return new NextResponse(null, { status: 200 })
   }
 
@@ -128,11 +126,6 @@ export async function GET(
     ? customer.loyalty_balances[0]
     : customer.loyalty_balances
 
-    console.log('New Stamp amount', balance?.current_stamps);
-    console.log('--- APPLE WALLET DATE DEBUG ---');
-    console.log('1. Header from Apple:', ifModifiedSince);
-    console.log('2. Customer updated_at from DB:', customer.updated_at);
-
     if (!customer) {
       return new NextResponse(null, { status: 404 })
     }
@@ -145,15 +138,10 @@ export async function GET(
       const deviceDate = new Date(ifModifiedSince).getTime();
       const dbDate = passUpdatedAt.getTime();
 
-      console.log(`3. Comparing - DB Date: ${dbDate} vs Device Date: ${deviceDate}`);
-
       if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
-        console.log(`[304] Pass unchanged for ${serialNumber}. Sending 304.`);
         return new NextResponse(null, { status: 304 });
       }
     }
-
-    console.log(`[200] Pass modified. Generating new pass...`);
 
     const currentStamps = balance?.current_stamps || 0;
 
