@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Scanner } from '@yudiel/react-qr-scanner'
-import { sendAppleWalletPush } from '@/utils/applePush'
 
 export default function DashboardPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
@@ -170,7 +169,7 @@ export default function DashboardPage() {
 
   const handleLogStamp = async () => {
     if (!customer || !businessId) return
-    
+
     const spendValue = parseFloat(amountSpent)
     if (isNaN(spendValue) || spendValue < 0) {
       setErrorMsg('Please enter a valid amount spent.')
@@ -213,42 +212,30 @@ export default function DashboardPage() {
         
       if (customerError) throw new Error('Failed to update customer lifetime spending.')
 
-      // 4. --- SYNC WITH GOOGLE WALLET ---
+      //4. --- SYNC WITH WALLETS ---
       try {
-        await fetch('/api/wallet/update', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            businessId: businessId,
-            customerId: customer.id, // Changed this to pass the UUID directly
-            newStampCount: newStampCount
+        // Run both wallet syncs in parallel without blocking the UI
+        Promise.allSettled([
+          fetch('/api/wallet/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              businessId: businessId,
+              customerId: customer.id, 
+              newStampCount: newStampCount
+            })
+          }),
+          fetch('/api/wallet/apple-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customerId: customer.id
+            })
           })
-        })
+        ]);
       } catch (walletErr) {
-        console.error("Google Wallet sync skipped/failed:", walletErr)
+        console.error("Wallet sync failed:", walletErr);
       }
-
-      // 5. --- SYNC WITH APPLE WALLET ---
-      // 1. Find all Apple devices registered to this specific customer
-      const { data: devices } = await supabase
-        .from('apple_wallet_registrations')
-        .select('push_token')
-        .eq('customer_id', customer.id) // The UUID of the customer who just got a stamp
-
-      // Add these logs right here
-      console.log('--- DEBUG PUSH ---');
-      console.log('Looking for customer ID:', customer.id);
-      console.log('Devices found:', devices);
-      console.log('------------------');
-
-      // 2. Fire off a push notification to every device they own
-      if (devices && devices.length > 0) {
-        await Promise.all(
-          devices.map(device => sendAppleWalletPush(device.push_token))
-        )
-        console.log(`Apple Wallet push sent to ${devices.length} device(s) for customer ${customer.id} with push tokens: ${devices.map(d => d.push_token).join(', ')}`)
-      }
-      console.log(`Stamp logged successfully for customer ${customer.id}. New stamp count: ${newStampCount}, Total spent: ${newTotalSpent}`)
 
       // Update UI state
       setCustomer({ ...customer, stamps: newStampCount, totalSpent: newTotalSpent })

@@ -2,6 +2,7 @@
 import jwt from 'jsonwebtoken'
 
 export async function sendAppleWalletPush(pushToken: string) {
+  console.log(`🚀 Sending Apple Wallet Push Notification to token: ${pushToken}`)
   try {
     const teamId = process.env.APPLE_TEAM_ID!
     const keyId = process.env.APPLE_APNS_KEY_ID!
