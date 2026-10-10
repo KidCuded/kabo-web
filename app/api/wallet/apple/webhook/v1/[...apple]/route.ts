@@ -155,7 +155,7 @@ export async function GET(
 
     console.log(`[200] Pass modified. Generating new pass...`);
 
-    const currentStamps = customer.loyalty_balances?.[0]?.current_stamps || 0
+    const currentStamps = balance?.current_stamps || 0;
 
     const passResponse = await fetch(
       `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}`,
