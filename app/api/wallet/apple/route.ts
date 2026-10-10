@@ -55,7 +55,8 @@ export async function GET(request: Request) {
       .select(`
         store_name, 
         loyalty_rules (
-          program_name
+          program_name,
+          stamp_threshold
         ),
         business_customizations (
           logo_url, 
@@ -98,20 +99,12 @@ export async function GET(request: Request) {
           foregroundColor: hexToRgb(custom.secondary_color),
           
           storeCard: {
-            primaryFields: [
-              { 
-                key: 'program', 
-                label: 'REWARDS', 
-                // Fallback to a hardcoded string if the variable is undefined
-                value: businessData?.loyalty_rules?.[0]?.program_name || 'Loyalty Program'
-              }
-            ],
             secondaryFields: [
               { 
                 key: 'stamps', 
                 label: 'STAMPS COLLECTED', 
                 // Ensure it never evaluates to "undefined"
-                value: currentStamps.toString()
+                value: currentStamps.toString() + ' of ' + (businessData?.loyalty_rules?.[0]?.stamp_threshold || 'N/A')
               }
             ]
           }
