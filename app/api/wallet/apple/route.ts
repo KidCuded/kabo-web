@@ -92,15 +92,25 @@ export async function GET(request: Request) {
         logoText: businessData.store_name,
         
         // Feed the unified colors in
-        backgroundColor: hexToRgb(custom.primary_color || '#2563EB'),
-        foregroundColor: hexToRgb(custom.secondary_color || '#FFFFFF'),
+        backgroundColor: hexToRgb(custom.primary_color),
+        foregroundColor: hexToRgb(custom.secondary_color),
         
         storeCard: {
           primaryFields: [
-            { key: 'program', label: 'REWARDS', value: businessData.store_name }
+            { 
+              key: 'program', 
+              label: 'REWARDS', 
+              // Fallback to a hardcoded string if the variable is undefined
+              value: businessData?.store_name || 'Loyalty Member' 
+            }
           ],
           secondaryFields: [
-            { key: 'stamps', label: 'STAMPS COLLECTED', value: currentStamps.toString() }
+            { 
+              key: 'stamps', 
+              label: 'STAMPS COLLECTED', 
+              // Ensure it never evaluates to "undefined"
+              value: currentStamps ? currentStamps.toString() : '0' 
+            }
           ]
         }
       })),
