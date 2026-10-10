@@ -235,6 +235,12 @@ export default function DashboardPage() {
         .select('push_token')
         .eq('customer_id', customer.id) // The UUID of the customer who just got a stamp
 
+      // Add these logs right here
+      console.log('--- DEBUG PUSH ---');
+      console.log('Looking for customer ID:', customer.id);
+      console.log('Devices found:', devices);
+      console.log('------------------');
+
       // 2. Fire off a push notification to every device they own
       if (devices && devices.length > 0) {
         await Promise.all(
@@ -242,6 +248,7 @@ export default function DashboardPage() {
         )
         console.log(`Apple Wallet push sent to ${devices.length} device(s) for customer ${customer.id} with push tokens: ${devices.map(d => d.push_token).join(', ')}`)
       }
+      console.log(`Stamp logged successfully for customer ${customer.id}. New stamp count: ${newStampCount}, Total spent: ${newTotalSpent}`)
 
       // Update UI state
       setCustomer({ ...customer, stamps: newStampCount, totalSpent: newTotalSpent })

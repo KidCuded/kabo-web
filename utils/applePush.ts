@@ -5,9 +5,7 @@ export async function sendAppleWalletPush(pushToken: string) {
   try {
     const teamId = process.env.APPLE_TEAM_ID!
     const keyId = process.env.APPLE_APNS_KEY_ID!
-    const privateKey = process.env.APPLE_APNS_KEY!
-    console.log(`🔑 Using Apple Team ID: ${teamId}, Key ID: ${keyId}`)
-    // console.log(`🔑 Using Apple APNS Key: ${privateKey}`)
+    const privateKey = process.env.APPLE_APNS_KEY!.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
 
     // Generate JWT for APNs authentication
     const token = jwt.sign(
