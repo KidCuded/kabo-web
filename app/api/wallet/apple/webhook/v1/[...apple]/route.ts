@@ -143,7 +143,7 @@ if (path[0] === 'passes') {
 
   // 3. Fetch fresh pass payload
   const passResponse = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}&lastUpdated=${encodeURIComponent(passLastUpdated)}`,
+    `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}&lastUpdated=${encodeURIComponent(passLastUpdated)}`,
     { cache: 'no-store' }
   )
 
