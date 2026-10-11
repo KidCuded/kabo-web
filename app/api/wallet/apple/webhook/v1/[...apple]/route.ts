@@ -124,9 +124,11 @@ if (path[0] === 'passes') {
     return new NextResponse(null, { status: 404 })
   }
 
-  const loyaltyBalance = customer.loyalty_balances?.[0]
-  const currentStamps = loyaltyBalance?.current_stamps || 0
-  const passLastUpdated = loyaltyBalance?.updated_at || customer.updated_at
+    const loyaltyBalance = Array.isArray(customer.loyalty_balances)
+    ? customer.loyalty_balances[0]
+    : customer.loyalty_balances
+    const currentStamps = loyaltyBalance?.current_stamps || 0
+    const passLastUpdated = loyaltyBalance?.updated_at || customer.updated_at
 
   // 2. Evaluate if-modified-since against the balance timestamp
   const ifModifiedSince = request.headers.get('if-modified-since')
