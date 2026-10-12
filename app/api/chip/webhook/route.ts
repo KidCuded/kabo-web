@@ -1,3 +1,4 @@
+// app/api/chip/webhook/route.ts
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
         .eq('id', businessId)
 
       if (error) throw error
+      console.log(`CHIP Webhook: ${businessId} upgraded to Active with subscription token ${subscriptionToken}. They will be billed next on ${nextBillingDate.toISOString().split('T')[0]}.`)
       console.log(`CHIP Webhook: Business ${businessId} upgraded to Active`)
     }
     
