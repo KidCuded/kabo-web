@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
 
     // 5. Handle Successful Payment
-    if (eventType == "purchase.paid") {
+    if (eventType == "purchase.paid" || event.event_type == 'purchase.paid') {
       console.log('Processing successful purchase event...');
       const businessId = event.reference // The business ID we passed during checkout
       
