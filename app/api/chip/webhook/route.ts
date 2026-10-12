@@ -5,8 +5,6 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
   try {
-    console.log('CHIP Webhook: Running webhook handler...')
-
     // 1. Extract the raw body and signature
     const body = await request.text()
     const signature = request.headers.get('x-signature')
@@ -23,14 +21,12 @@ export async function POST(request: Request) {
     verifier.update(body)
     const isVerified = verifier.verify(publicKey, signature, 'base64')
 
-    console.log('Signature received:', signature);
-    console.log('Public Key starts with:', publicKey.substring(0, 30));
-    console.log('Public Key ends with:', publicKey.substring(publicKey.length - 30));
-
     if (!isVerified) {
       console.error('CHIP Webhook: Signature verification failed')
       return new NextResponse('Invalid signature', { status: 401 })
     }
+
+    console.log('Webhook signature verified successfully. Processing event...');
 
     // 3. Parse the verified event
     const event = JSON.parse(body)
@@ -43,6 +39,7 @@ export async function POST(request: Request) {
 
     // 5. Handle Successful Payment
     if (event.event_name === 'purchase.paid') {
+      console.log('Processing successful purchase event...');
       const businessId = event.reference // The business ID we passed during checkout
       
       // CHIP's identifiers
@@ -68,7 +65,6 @@ export async function POST(request: Request) {
       console.log(`CHIP Webhook: ${businessId} upgraded to Active with subscription token ${subscriptionToken}. They will be billed next on ${nextBillingDate.toISOString().split('T')[0]}.`)
       console.log(`CHIP Webhook: Business ${businessId} upgraded to Active`)
     }
-    
     // 6. Handle Refunded Payments (Corrected Event Name)
     else if (event.event_name === 'payment.refunded') {
       // Depending on CHIP's payment object, the reference is usually attached to the parent purchase object
