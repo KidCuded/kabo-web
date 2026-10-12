@@ -30,6 +30,7 @@ export async function POST(request: Request) {
 
     // 3. Parse the verified event
     const event = JSON.parse(body)
+    const eventType = JSON.stringify(event.event_type, null, 2)
 
     // 4. Initialize Supabase Admin Client
     const supabase = createClient(
@@ -37,13 +38,8 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    console.log('CHIP EVENT TYPE STRING:', event.event_type);
-    console.log('CHIP EVENT TYPE:', JSON.stringify(event.event_type, null, 2));
-    console.log('CHIP EVENT NAME:', JSON.stringify(event.event_name, null, 2));
-
-
     // 5. Handle Successful Payment
-    if (event.event_type === 'payment.paid') {
+    if (eventType == 'payment.paid') {
       console.log('Processing successful purchase event...');
       const businessId = event.reference // The business ID we passed during checkout
       
