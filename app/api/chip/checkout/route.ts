@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       // Updated paths to return directly to /dashboard/subscription
       success_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?payment=success`,
       failure_redirect: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?payment=failed`,
-      
+
       client: {
         email: customerEmail,
         full_name: customerName || 'Kabo Merchant',
@@ -54,6 +54,8 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify(payload),
     })
+
+    console.log(`CHIP Checkout API Response Status: ${response.status}`)
 
     const data = await response.json()
 

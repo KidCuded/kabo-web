@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
   try {
+    console.log('CHIP Webhook: Running webhook handler...')
+
     // 1. Extract the raw body and signature
     const body = await request.text()
     const signature = request.headers.get('x-signature')
@@ -24,6 +26,10 @@ export async function POST(request: Request) {
       console.error('CHIP Webhook: Signature verification failed')
       return new NextResponse('Invalid signature', { status: 401 })
     }
+
+    console.log('Signature received:', signature);
+    console.log('Public Key starts with:', publicKey.substring(0, 30));
+    console.log('Public Key ends with:', publicKey.substring(publicKey.length - 30));
 
     // 3. Parse the verified event
     const event = JSON.parse(body)
