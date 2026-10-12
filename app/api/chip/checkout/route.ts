@@ -49,8 +49,8 @@ export async function POST(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        //'Authorization': `Bearer ${process.env.CHIP_API_KEY}`, // Use CHIP_API_KEY for production
-        'Authorization': `Bearer ${process.env.CHIP_API_KEY_TEST}`,
+        'Authorization': `Bearer ${process.env.CHIP_API_KEY}`, // Use CHIP_API_KEY for production
+        //'Authorization': `Bearer ${process.env.CHIP_API_KEY_TEST}`,
       },
       body: JSON.stringify(payload),
     })

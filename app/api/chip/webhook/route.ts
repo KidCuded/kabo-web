@@ -14,8 +14,8 @@ export async function POST(request: Request) {
     }
 
     // 2. Verify the webhook payload using CHIP's Public Key
-    //const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY!.replace(/\\n/g, '\n')
-    const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY_TEST!.replace(/\\n/g, '\n')
+    const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY!.replace(/\\n/g, '\n')
+    //const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY_TEST!.replace(/\\n/g, '\n')
     
     const verifier = crypto.createVerify('RSA-SHA256')
     verifier.update(body)
@@ -25,8 +25,6 @@ export async function POST(request: Request) {
       console.error('CHIP Webhook: Signature verification failed')
       return new NextResponse('Invalid signature', { status: 401 })
     }
-
-    console.log('Webhook signature verified successfully. Processing event...');
 
     // 3. Parse the verified event
     const event = JSON.parse(body)
