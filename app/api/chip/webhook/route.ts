@@ -37,6 +37,8 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    console.log('FULL CHIP EVENT:', JSON.stringify(event, null, 2));
+    
     // 5. Handle Successful Payment
     if (event.event_name === 'purchase.paid') {
       console.log('Processing successful purchase event...');
@@ -62,7 +64,6 @@ export async function POST(request: Request) {
         .eq('id', businessId)
 
       if (error) throw error
-      console.log(`CHIP Webhook: ${businessId} upgraded to Active with subscription token ${subscriptionToken}. They will be billed next on ${nextBillingDate.toISOString().split('T')[0]}.`)
       console.log(`CHIP Webhook: Business ${businessId} upgraded to Active`)
     }
     // 6. Handle Refunded Payments (Corrected Event Name)
