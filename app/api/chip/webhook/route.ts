@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     console.log('FULL CHIP EVENT:', JSON.stringify(event, null, 2));
 
     // 5. Handle Successful Payment
-    if (event.event_name === 'purchase.created' || event.event_name === 'payment.succeeded') {
+    if (event.event_name === 'purchase.created' || event.event_name === 'payment.paid') {
       console.log('Processing successful purchase event...');
       const businessId = event.reference // The business ID we passed during checkout
       
