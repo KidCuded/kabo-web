@@ -37,9 +37,12 @@ export async function POST(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+    
+    console.log('Event Type:', eventType);
+
 
     // 5. Handle Successful Payment
-    if (eventType == 'purchase.paid') {
+    if (eventType == "purchase.paid") {
       console.log('Processing successful purchase event...');
       const businessId = event.reference // The business ID we passed during checkout
       
