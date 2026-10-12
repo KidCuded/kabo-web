@@ -1,8 +1,8 @@
 // app/page.tsx
 import Link from 'next/link'
-import Header from './components/header'
-import Footer from './components/footer'
-import DarkVeil from './components/DarkVeil' // Import the DarkVeil component (Animated Background)
+import Header from '../components/header'
+import Footer from '../components/footer'
+import DarkVeil from '../components/DarkVeil' // Import the DarkVeil component (Animated Background)
 
 export default function LandingPage() {
   return (
@@ -40,7 +40,7 @@ export default function LandingPage() {
               A lightning-fast digital platform that keeps customers coming back for rewards, catches negative feedback privately, and automatically drives your best customers to leave 5-star Google Reviews.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/register" className="w-full sm:w-auto text-lg font-bold bg-blue-500 text-white px-8 py-4 rounded-xl hover:bg-blue-400 transition-all transform hover:-translate-y-1 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+              <Link href="/auth/register" className="w-full sm:w-auto text-lg font-bold bg-blue-500 text-white px-8 py-4 rounded-xl hover:bg-blue-400 transition-all transform hover:-translate-y-1 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]">
                 Upgrade Your Store
               </Link>
               <Link href="#pricing" className="w-full sm:w-auto text-lg font-bold bg-black/50 backdrop-blur-sm text-white px-8 py-4 rounded-xl hover:bg-gray-800 transition-all border border-gray-700 hover:border-gray-500">
@@ -127,7 +127,7 @@ export default function LandingPage() {
                     Basic loyalty tracking
                   </li>
                 </ul>
-                <Link href="/register" className="block w-full text-center font-bold bg-gray-800 text-white px-6 py-4 rounded-xl hover:bg-gray-700 transition-colors">
+                <Link href="/auth/register" className="block w-full text-center font-bold bg-gray-800 text-white px-6 py-4 rounded-xl hover:bg-gray-700 transition-colors">
                   Start Trial
                 </Link>
               </div>
@@ -161,7 +161,7 @@ export default function LandingPage() {
                     Digital QR code scanner support
                   </li>
                 </ul>
-                <Link href="/register" className="block w-full text-center font-bold bg-blue-500 text-white px-6 py-4 rounded-xl hover:bg-blue-400 transition-colors shadow-lg shadow-blue-500/25">
+                <Link href="/auth/register" className="block w-full text-center font-bold bg-blue-500 text-white px-6 py-4 rounded-xl hover:bg-blue-400 transition-colors shadow-lg shadow-blue-500/25">
                   Upgrade to Pro
                 </Link>
               </div>
@@ -175,7 +175,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto px-4 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to upgrade your store?</h2>
             <p className="text-xl text-blue-200/80 mb-8">Join modern stores using KABO to bring customers back.</p>
-            <Link href="/register" className="inline-block font-bold bg-white text-black px-10 py-4 rounded-xl hover:bg-gray-200 transition-colors transform hover:-translate-y-1 shadow-xl">
+            <Link href="/auth/register" className="inline-block font-bold bg-white text-black px-10 py-4 rounded-xl hover:bg-gray-200 transition-colors transform hover:-translate-y-1 shadow-xl">
               Get Started for Free
             </Link>
           </div>

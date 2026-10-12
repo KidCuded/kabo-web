@@ -216,7 +216,7 @@ export default function DashboardPage() {
       try {
         // Run both wallet syncs in parallel without blocking the UI
         Promise.allSettled([
-          fetch('/api/wallet/update', {
+          fetch('/api/wallet/google/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -225,7 +225,7 @@ export default function DashboardPage() {
               newStampCount: newStampCount
             })
           }),
-          fetch('/api/wallet/apple-push', {
+          fetch('/api/wallet/apple/push', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -287,7 +287,7 @@ export default function DashboardPage() {
        try {
         // Run both wallet syncs in parallel without blocking the UI
         Promise.allSettled([
-          fetch('/api/wallet/update', {
+          fetch('/api/wallet/google/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -296,7 +296,7 @@ export default function DashboardPage() {
               newStampCount: newStampCount
             })
           }),
-          fetch('/api/wallet/apple-push', {
+          fetch('/api/wallet/apple/push', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-// import { createClient } from '@supabase/supabase-js' // Uncomment if you need to fetch DB prices
 
 export async function POST(request: Request) {
   try {
-    // 1. Extract the data sent from your frontend checkout button
+    // 1. Extract the data sent from the frontend checkout button
     const body = await request.json()
     
     // Adjust these destructured variables based on what your frontend actually sends
@@ -14,11 +13,9 @@ export async function POST(request: Request) {
     }
 
     // 2. Determine the price
-    // If you fetch prices dynamically from Supabase, do it here.
-    // For this example, let's assume a subscription is RM 150.00
+    // Subscription is RM 150.00
     const amount = 150.00 
-    
-    // CRITICAL: CHIP requires all prices in cents (e.g., RM 150.00 = 15000)
+    // CHIP requires all prices in cents (e.g., RM 150.00 = 15000)
     const amountInCents = Math.round(amount * 100)
 
     // 3. Build the CHIP Purchase Payload

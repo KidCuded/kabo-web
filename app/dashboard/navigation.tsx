@@ -1,4 +1,4 @@
-// app/dashboard/Navigation.tsx
+// app/dashboard/navigation.tsx
 'use client'
 
 import { useState, useEffect } from 'react'

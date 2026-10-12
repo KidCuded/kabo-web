@@ -1,6 +1,6 @@
 // app/api/wallet/update/route.ts
 import { NextResponse } from 'next/server'
-import { pushGoogleWalletUpdate } from '@/utils/updateGooglePass'
+import { pushGoogleWalletUpdate } from '@/features/updateGooglePass'
 import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {

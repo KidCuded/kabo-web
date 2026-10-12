@@ -2,7 +2,6 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { startFreeTrial } from '@/app/actions/subscription'
 import Navigation from './navigation' // Import your new client component
 
 export default async function DashboardLayout({
@@ -46,7 +45,7 @@ export default async function DashboardLayout({
               Go to Dashboard
           </Link>
           <button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-4 rounded-xl transition-colors shadow-sm my-2">
-            Upgrade to Pro (RM 111/mo)
+            Upgrade to Pro (RM 150/mo)
           </button>
           <p className="text-xs text-gray-400">Secure FPX Direct Debit via Curlec</p>
         </div>

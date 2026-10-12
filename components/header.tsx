@@ -35,10 +35,10 @@ export default function Header() {
                 </Link>
             </div>
             <nav className="flex items-center gap-6">
-                <Link href="/login" className="text-sm font-semibold text-gray-400 hover:text-white transition-colors">
+                <Link href="/auth/login" className="text-sm font-semibold text-gray-400 hover:text-white transition-colors">
                     Log in
                 </Link>
-                <Link href="/register" className="text-sm font-semibold bg-white text-black px-5 py-2.5 rounded-lg hover:bg-gray-200 transition-colors shadow-sm">
+                <Link href="/auth/register" className="text-sm font-semibold bg-white text-black px-5 py-2.5 rounded-lg hover:bg-gray-200 transition-colors shadow-sm">
                     Get Started
                 </Link>
             </nav>

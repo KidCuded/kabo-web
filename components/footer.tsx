@@ -20,22 +20,22 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Column 2: Legal (Required for Curlec Compliance) */}
+          {/* Column 2: Legal*/}
           <div>
             <h4 className="text-sm font-semibold text-white tracking-wider uppercase mb-4">Legal</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/terms" className="text-gray-400 hover:text-white transition-colors">
                   Terms &amp; Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/privacy" className="text-gray-400 hover:text-white transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/refund-policy" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/refund-policy" className="text-gray-400 hover:text-white transition-colors">
                   Refund Policy
                 </Link>
               </li>
@@ -47,12 +47,12 @@ export default function Footer() {
             <h4 className="text-sm font-semibold text-white tracking-wider uppercase mb-4">Company</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/about" className="text-gray-400 hover:text-white transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/contact" className="text-gray-400 hover:text-white transition-colors">
                   Contact Us
                 </Link>
               </li>

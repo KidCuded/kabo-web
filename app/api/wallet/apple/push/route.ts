@@ -1,6 +1,7 @@
+// app/api/wallet/apple/push/route.ts
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendAppleWalletPush } from '@/utils/applePush';
+import { sendAppleWalletPush } from '@/features/applePush';
 
 export async function POST(request: Request) {
   try {

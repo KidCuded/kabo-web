@@ -1,7 +1,7 @@
 // app/contact/page.tsx
 import Link from 'next/link'
-import Header from '@/app/components/header' // Adjust import path if needed
-import Footer from '@/app/components/footer'
+import Header from '@/components/header' // Adjust import path if needed
+import Footer from '@/components/footer'
 import { Handshake, MessageSquare } from 'lucide-react'
 
 export default function ContactPage() {

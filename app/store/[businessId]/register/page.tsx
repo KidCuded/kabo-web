@@ -35,7 +35,6 @@ export default function CustomerRegistration() {
   const [bgPattern, setBgPattern] = useState('clean')
   const [portalBgUrl, setPortalBgUrl] = useState<string | null>(null)
 
-  // app/store/[businessId]/register/page.tsx
   useEffect(() => {
     async function fetchBranding() {
       if (!businessId) return
@@ -93,7 +92,7 @@ export default function CustomerRegistration() {
       if (status?.success && customerInfo && (deviceOS === 'android' || deviceOS === 'other')) {
         setIsLoadingWallet(true)
         try {
-          const res = await fetch('/api/wallet/generate', {
+          const res = await fetch('/api/wallet/google/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

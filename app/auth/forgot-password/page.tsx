@@ -18,8 +18,7 @@ export default function ForgotPasswordPage() {
     setMessage('')
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // Safely captures http://localhost:3000 locally or https://www.kabo.my in production
-      redirectTo: `${window.location.origin}/update-password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/update-password`,
     })
 
     if (error) {
