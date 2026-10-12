@@ -24,7 +24,7 @@
 .DS_Store
 *.pem
 /certificates
-/supabase
+supabase/.temp/
 
 # debug
 npm-debug.log*

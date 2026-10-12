@@ -1,11 +1,14 @@
 // app/dashboard/page.tsx
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Scanner } from '@yudiel/react-qr-scanner'
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams()
+
   const [phoneNumber, setPhoneNumber] = useState('')
   const [searchedPhone, setSearchedPhone] = useState('')
   const [businessId, setBusinessId] = useState<string | null>(null)
@@ -36,26 +39,35 @@ export default function DashboardPage() {
         .single()
 
       if (businessData) {
-        setBusinessId(businessData.id)
+        const currentBusinessId = businessData.id
+        setBusinessId(currentBusinessId)
         
         const { data: ruleData } = await supabase
           .from('loyalty_rules')
           .select('stamp_threshold')
-          .eq('business_id', businessData.id)
+          .eq('business_id', currentBusinessId)
           .single()
           
         if (ruleData) {
           setStampThreshold(ruleData.stamp_threshold)
         }
+
+        // 👉 Automatically trigger search here using the fresh ID
+        const phoneParam = searchParams.get('phone')
+        if (phoneParam) {
+          setPhoneNumber(phoneParam)
+          handleSearch(undefined, phoneParam, currentBusinessId)
+        }
       }
     }
     fetchBusiness()
-  }, [supabase])
+  }, [supabase, searchParams])
 
-  const handleSearch = async (e?: React.FormEvent, phoneOverride?: string) => {
+  const handleSearch = async (e?: React.SubmitEvent<HTMLFormElement>, phoneOverride?: string, businessIdOverride?: string) => {
     if (e) e.preventDefault()
     const targetPhone = phoneOverride || phoneNumber
-    if (!targetPhone.trim() || !businessId) return
+    const targetBusinessId = businessIdOverride || businessId
+    if (!targetPhone.trim() || !targetBusinessId) return
     
     setSearchState('LOADING')
     setCustomer(null)
@@ -74,7 +86,7 @@ export default function DashboardPage() {
         loyalty_balances!inner ( current_stamps )
       `)
       .eq('phone_number', targetPhone)
-      .eq('loyalty_balances.business_id', businessId)
+      .eq('loyalty_balances.business_id', targetBusinessId)
       .single()
 
     if (error || !data) {
