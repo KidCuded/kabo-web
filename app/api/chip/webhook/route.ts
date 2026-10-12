@@ -16,7 +16,8 @@ export async function POST(request: Request) {
     }
 
     // 2. Verify the webhook payload using CHIP's Public Key
-    const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY!.replace(/\\n/g, '\n')
+    //const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY!.replace(/\\n/g, '\n')
+    const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY_TEST!.replace(/\\n/g, '\n')
     
     const verifier = crypto.createVerify('RSA-SHA256')
     verifier.update(body)
