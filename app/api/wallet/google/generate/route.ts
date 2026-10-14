@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Helper to correctly parse multi-line PEM keys from environment variables
 const parseEnv = (val?: string) => {
   if (!val) return ''
