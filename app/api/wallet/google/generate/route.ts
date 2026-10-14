@@ -115,7 +115,6 @@ export async function POST(request: Request) {
       origins: [process.env.NEXT_PUBLIC_SITE_URL],
       typ: 'savetowallet',
       payload: {
-        loyaltyClasses: [loyaltyClass],
         loyaltyObjects: [loyaltyObject]
       }
     }
