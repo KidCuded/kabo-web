@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { GoogleAuth } from 'google-auth-library'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const parseEnv = (val?: string) => {
   if (!val) return ''
   return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
