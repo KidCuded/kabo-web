@@ -1,10 +1,7 @@
-// app/api/wallet/class/route.ts
+// app/api/wallet/google/class/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { GoogleAuth } from 'google-auth-library'
-
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 const parseEnv = (val?: string) => {
   if (!val) return ''

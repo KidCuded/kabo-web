@@ -1,10 +1,8 @@
-// app/api/wallet/generate/route.ts
+// app/api/wallet/google/generate/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 // Helper to correctly parse multi-line PEM keys from environment variables
 const parseEnv = (val?: string) => {
@@ -93,8 +91,6 @@ export async function POST(request: Request) {
       ]
     }
 
-    console.log(loyaltyClass)
-
     // 5. Define Loyalty Object (Customer Pass)
     const loyaltyObject = {
       id: objectId,
@@ -118,8 +114,6 @@ export async function POST(request: Request) {
         }
       }
     }
-
-    console.log(loyaltyObject)
 
     // 6. Generate the JWT Save Link
     const claims = {
