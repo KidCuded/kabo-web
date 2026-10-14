@@ -56,6 +56,8 @@ export async function POST(request: Request) {
     const currentStamps = balances?.current_stamps || 0
     const threshold = rules?.stamp_threshold || 10
     const customerId = customerData.id
+    console.log(`Generating Google Wallet pass for program: ${rules?.program_name}`)
+
     const programName = rules?.program_name || `${businessData.store_name} Rewards`
 
     // 3. Setup Google Auth & Identifiers
@@ -77,6 +79,8 @@ export async function POST(request: Request) {
         sourceUri: { uri: custom.wallet_hero_image_url }
       } : undefined
     }
+
+    console.log(loyaltyClass)
 
     // 5. Define Loyalty Object (Customer Pass)
     const loyaltyObject = {
@@ -101,6 +105,8 @@ export async function POST(request: Request) {
         }
       }
     }
+
+    console.log(loyaltyObject)
 
     // 6. Generate the JWT Save Link
     const claims = {
