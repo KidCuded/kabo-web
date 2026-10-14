@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       .select(`
         store_name, 
         business_customizations (logo_url, primary_color, wallet_hero_image_url),
-        loyalty_rules (program_name)
+        loyalty_rules (program_name, stamp_threshold, reward_description)
       `)
       .eq('id', businessId)
       .single()
@@ -52,6 +52,18 @@ export async function POST(request: Request) {
       programLogo: custom?.logo_url ? { sourceUri: { uri: custom.logo_url } } : undefined,
       reviewStatus: 'UNDER_REVIEW',
       hexBackgroundColor: custom?.primary_color || '#2563EB',
+      
+      // MAP YOUR CUSTOM RULES TO GOOGLE's TEXT MODULES
+      textModulesData: [
+        {
+          header: "Reward Goal",
+          body: `Collect ${rules?.stamp_threshold} stamps to earn your reward!`
+        },
+        {
+          header: "Reward Description",
+          body: rules?.reward_description
+        }
+      ]
     }
 
     const classUrl = `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass`

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       .select(`
         store_name,
         business_customizations (logo_url, primary_color, wallet_hero_image_url),
-        loyalty_rules (program_name, stamp_threshold)
+        loyalty_rules (program_name, stamp_threshold, reward_description)
       `)
       .eq('id', businessId)
       .single()
@@ -75,7 +75,17 @@ export async function POST(request: Request) {
       hexBackgroundColor: custom?.primary_color || '#2563EB',
       heroImage: custom?.wallet_hero_image_url ? {
         sourceUri: { uri: custom.wallet_hero_image_url }
-      } : undefined
+      } : undefined, // Fixed missing comma here
+      textModulesData: [
+        {
+          header: "Reward Goal",
+          body: `Collect ${threshold} stamps to earn your reward!`
+        },
+        {
+          header: "Reward Description",
+          body: rules?.reward_description
+        }
+      ]
     }
 
     // 5. Define Loyalty Object (Customer Pass)
@@ -86,7 +96,7 @@ export async function POST(request: Request) {
       accountId: customerId,
       accountName: customerName,
       loyaltyPoints: {
-        balance: { string: `${currentStamps} of ${threshold}` },
+        balance: { string: `${currentStamps}` },
         label: 'STAMPS'
       },
       barcode: {
