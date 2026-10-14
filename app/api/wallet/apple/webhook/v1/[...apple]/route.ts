@@ -37,6 +37,8 @@ export async function POST(
     const passTypeIdentifier = path[3]
     const serialNumber = path[4]
 
+      console.log('Received Apple Wallet webhook POST request for deviceLibraryIdentifier:', deviceLibraryIdentifier, 'passTypeIdentifier:', passTypeIdentifier, 'serialNumber:', serialNumber)
+
     const body = await request.json()
     const pushToken = body.pushToken
 
@@ -104,11 +106,11 @@ export async function GET(
     })
   }
 
-if (path[0] === 'passes') {
-  const isAuthorized = await isValidAuth(request)
-  if (!isAuthorized) {
-    return new NextResponse(null, { status: 401 })
-  }
+  if (path[0] === 'passes') {
+    const isAuthorized = await isValidAuth(request)
+    if (!isAuthorized) {
+      return new NextResponse(null, { status: 401 })
+    }
 
   const serialNumber = path[2] // customerId
   const supabase = getSupabase()
@@ -143,7 +145,7 @@ if (path[0] === 'passes') {
     }
   }
 
-  // 3. Fetch fresh pass payload
+  // 3. Fetch fresh pass payload from 'api/wallet/apple'
   const passResponse = await fetch(
     `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}&lastUpdated=${encodeURIComponent(passLastUpdated)}`,
     { cache: 'no-store' }
@@ -155,6 +157,8 @@ if (path[0] === 'passes') {
 
   const passArrayBuffer = await passResponse.arrayBuffer()
 
+  // 4. Return the pass with the payload and appropriate headers
+  console.log(`Returning Apple Wallet pass for customer ${serialNumber}, last updated: ${passLastUpdated}`)
   return new NextResponse(new Uint8Array(passArrayBuffer), {
     status: 200,
     headers: {

@@ -1,4 +1,5 @@
 // app/api/wallet/apple/push/route.ts
+// Receives POST requests from handlers that updates stamp amount and to update Apple Wallet passes
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendAppleWalletPush } from '@/features/applePush';
