@@ -120,7 +120,7 @@ const handleSaveSettings = async (e: React.FormEvent) => {
       // Run both wallet updates in parallel without blocking UI feedback
       Promise.allSettled([
         // Update Google Wallet LoyaltyClass with new program details
-        fetch('/api/wallet/class', {
+        fetch('/api/wallet/google/class', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

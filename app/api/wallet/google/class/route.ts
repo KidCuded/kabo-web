@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     const classUrl = `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass`
     const checkRes = await client.request({ url: `${classUrl}/${classId}`, method: 'GET' }).catch(() => null)
-    
+
     if (checkRes) {
       await client.request({ url: `${classUrl}/${classId}`, method: 'PUT', data: loyaltyClass })
     } else {

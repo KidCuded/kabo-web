@@ -245,7 +245,7 @@ export default function CustomizationPage() {
         // Run both wallet syncs in parallel without blocking the UI
         Promise.allSettled([
           // Sync specific fields to Google Wallet Generator
-          fetch('/api/wallet/class', {
+          fetch('/api/wallet/google/class', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
