@@ -66,65 +66,95 @@ export default function SettingsPage() {
     fetchSettings()
   }, [supabase])
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSaving(true)
-    setErrorMsg('')
+const handleSaveSettings = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setIsSaving(true)
+  setErrorMsg('')
 
-    if (Number(stampThreshold) < 1 || !rewardDescription.trim()) {
-      setErrorMsg('Threshold must be at least 1, and reward description cannot be empty.')
-      setIsSaving(false)
-      return
-    }
-
-    try {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) throw new Error('Not authenticated')
-
-      const { data: businessData } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('auth_user_id', userData.user.id)
-        .single()
-
-      if (!businessData) throw new Error('Business not found')
-
-      // 1. Save the Loyalty Rules
-      const { error: upsertError } = await supabase
-        .from('loyalty_rules')
-        .upsert({
-          business_id: businessData.id,
-          program_name: programName,
-          stamp_threshold: Number(stampThreshold),
-          reward_description: rewardDescription,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'business_id' })
-
-      if (upsertError) throw new Error('Failed to update loyalty rules.')
-
-      // 2. Save the Store Profile & Integrations
-      const { error: businessUpdateError } = await supabase
-        .from('businesses')
-        .update({ 
-          google_review_url: googleReviewUrl,
-          google_review_threshold: reviewThreshold,
-          contact_number: contactNumber,
-          address: address
-        })
-        .eq('id', businessData.id)
-
-      if (businessUpdateError) throw new Error('Failed to save store profile.')
-
-      setToastMessage('Settings Saved Successfully!')
-      setTimeout(() => setToastMessage(''), 3000)
-
-    } catch (err: any) {
-      setErrorMsg(err.message)
-    } finally {
-      setIsSaving(false)
-    }
+  if (Number(stampThreshold) < 1 || !rewardDescription.trim()) {
+    setErrorMsg('Threshold must be at least 1, and reward description cannot be empty.')
+    setIsSaving(false)
+    return
   }
 
+  try {
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData?.user?.id) throw new Error('Not authenticated')
+
+    const { data: businessData } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('auth_user_id', userData.user.id)
+      .single()
+
+    if (!businessData) throw new Error('Business not found')
+
+    // 1. Save the Loyalty Rules
+    const { error: upsertError } = await supabase
+      .from('loyalty_rules')
+      .upsert({
+        business_id: businessData.id,
+        program_name: programName,
+        stamp_threshold: Number(stampThreshold),
+        reward_description: rewardDescription,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'business_id' })
+
+    if (upsertError) throw new Error('Failed to update loyalty rules.')
+
+    // 2. Save the Store Profile & Integrations
+    const { error: businessUpdateError } = await supabase
+      .from('businesses')
+      .update({ 
+        google_review_url: googleReviewUrl,
+        google_review_threshold: reviewThreshold,
+        contact_number: contactNumber,
+        address: address
+      })
+      .eq('id', businessData.id)
+
+    if (businessUpdateError) throw new Error('Failed to save store profile.')
+
+    // 3. --- SYNC WITH WALLETS ---
+    try {
+      // Run both wallet updates in parallel without blocking UI feedback
+      Promise.allSettled([
+        // Update Google Wallet LoyaltyClass with new program details
+        fetch('/api/wallet/class', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: businessData.id,
+            programName: programName,
+            stampThreshold: Number(stampThreshold),
+            rewardDescription: rewardDescription
+          })
+        }),
+        // Broadcast APNs push to all devices registered under this business
+        fetch('/api/wallet/apple/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: businessData.id,
+            programName: programName,
+            stampThreshold: Number(stampThreshold),
+            rewardDescription: rewardDescription
+          })
+        })
+      ]);
+    } catch (walletErr) {
+      console.error("Wallet sync failed:", walletErr);
+    }
+
+    setToastMessage('Settings Saved & Wallet Updates Dispatched!')
+    setTimeout(() => setToastMessage(''), 3000)
+
+  } catch (err: any) {
+    setErrorMsg(err.message)
+  } finally {
+    setIsSaving(false)
+  }
+}
   return (
     <>
       {toastMessage && (
@@ -210,7 +240,7 @@ export default function SettingsPage() {
                     value={programName}
                     onChange={(e) => setProgramName(e.target.value)}
                   />
-                  <p className="text-sm text-gray-500 mt-2">Name your loyalty program.</p>
+                  <p className="text-sm text-gray-500 mt-2 mb-4">Name your loyalty program.</p>
                 </div>
 
               <div className="space-y-6">

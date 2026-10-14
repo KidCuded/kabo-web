@@ -240,15 +240,30 @@ export default function CustomizationPage() {
         throw new Error(error.message)
       }
 
-      // Sync specific fields to Google Wallet Generator
-      await fetch('/api/wallet/class', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: bData.id
-        })
-      })
-
+      // 3. --- SYNC WITH WALLETS ---
+      try {
+        // Run both wallet syncs in parallel without blocking the UI
+        Promise.allSettled([
+          // Sync specific fields to Google Wallet Generator
+          fetch('/api/wallet/class', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              businessId: bData.id
+            })
+          }),
+          // Broadcast APNs push to all devices registered under this business
+          fetch('/api/wallet/apple/push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              businessId: bData.id
+            })
+          })
+        ]);
+      } catch (syncErr) {
+        console.error("Wallet sync failed:", syncErr);
+      }
       setToastMessage('Global Brand Kit Saved Successfully!')
       setTimeout(() => setToastMessage(''), 3000)
     } catch (err: any) {

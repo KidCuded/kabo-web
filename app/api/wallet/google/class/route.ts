@@ -1,4 +1,4 @@
-// app/api/wallet/update-class/route.ts
+// app/api/wallet/class/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { GoogleAuth } from 'google-auth-library'
