@@ -26,6 +26,8 @@ export async function POST(
   const resolvedParams = await params
   const path = resolvedParams.apple
 
+  console.log('Received PATH:', path)
+
   if (path[0] === 'devices' && path[2] === 'registrations') {
     const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
