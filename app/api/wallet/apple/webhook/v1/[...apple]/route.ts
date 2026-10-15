@@ -13,7 +13,6 @@ function getSupabase() {
 }
 
 async function isValidAuth(req: Request) {
-  // Log headers from the Next.js helper
   const headersList = await headers()
   let authHeader = headersList.get('authorization')
   const expectedToken = `ApplePass ${process.env.APPLE_WEB_SERVICE_AUTH_TOKEN}`
@@ -35,9 +34,9 @@ export async function POST(
 
     const deviceLibraryIdentifier = path[1]
     const passTypeIdentifier = path[3]
-    const serialNumber = path[4]
+    const serialNumber = path[4] // Customer ID
 
-      console.log('Received Apple Wallet webhook POST request for deviceLibraryIdentifier:', deviceLibraryIdentifier, 'passTypeIdentifier:', passTypeIdentifier, 'serialNumber:', serialNumber)
+    console.log('Received Apple Wallet webhook POST request for deviceLibraryIdentifier:', deviceLibraryIdentifier, 'passTypeIdentifier:', passTypeIdentifier, 'serialNumber:', serialNumber)
 
     const body = await request.json()
     const pushToken = body.pushToken
@@ -48,10 +47,24 @@ export async function POST(
 
     const supabase = getSupabase()
 
+    // 1. Fetch business_id from customers table
+    const { data: customer, error: customerError } = await supabase
+      .from('customers')
+      .select('business_id')
+      .eq('id', serialNumber)
+      .single()
+
+    if (customerError || !customer) {
+      console.error('Customer not found for serial number:', serialNumber)
+      return new NextResponse(null, { status: 404 })
+    }
+
+    // 2. Upsert registration with business_id included
     const { error } = await supabase
       .from('apple_wallet_registrations')
       .upsert(
         {
+          business_id: customer.business_id,
           customer_id: serialNumber,
           device_library_identifier: deviceLibraryIdentifier,
           push_token: pushToken,
@@ -112,61 +125,61 @@ export async function GET(
       return new NextResponse(null, { status: 401 })
     }
 
-  const serialNumber = path[2] // customerId
-  const supabase = getSupabase()
+    const serialNumber = path[2] // customerId
+    const supabase = getSupabase()
 
-  // 1. Join loyalty_balances and select the specific balance timestamp
-  const { data: customer } = await supabase
-    .from('customers')
-    .select('*, loyalty_balances(current_stamps, updated_at)')
-    .eq('id', serialNumber)
-    .single()
+    // 1. Join loyalty_balances and select the specific balance timestamp
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('*, loyalty_balances(current_stamps, updated_at)')
+      .eq('id', serialNumber)
+      .single()
 
-  if (!customer) {
-    return new NextResponse(null, { status: 404 })
-  }
-
-  const loyaltyBalance = Array.isArray(customer.loyalty_balances)
-  ? customer.loyalty_balances[0]
-  : customer.loyalty_balances
-  const currentStamps = loyaltyBalance?.current_stamps || 0
-  const passLastUpdated = loyaltyBalance?.updated_at || customer.updated_at
-
-  // 2. Evaluate if-modified-since against the balance timestamp
-  const ifModifiedSince = request.headers.get('if-modified-since')
-
-  if (ifModifiedSince && passLastUpdated) {
-    const deviceDate = new Date(ifModifiedSince).getTime()
-    const dbDate = new Date(passLastUpdated).getTime()
-
-    // Truncate to seconds matching HTTP header specs
-    if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
-      return new NextResponse(null, { status: 304 })
+    if (!customer) {
+      return new NextResponse(null, { status: 404 })
     }
+
+    const loyaltyBalance = Array.isArray(customer.loyalty_balances)
+      ? customer.loyalty_balances[0]
+      : customer.loyalty_balances
+    const currentStamps = loyaltyBalance?.current_stamps || 0
+    const passLastUpdated = loyaltyBalance?.updated_at || customer.updated_at
+
+    // 2. Evaluate if-modified-since against the balance timestamp
+    const ifModifiedSince = request.headers.get('if-modified-since')
+
+    if (ifModifiedSince && passLastUpdated) {
+      const deviceDate = new Date(ifModifiedSince).getTime()
+      const dbDate = new Date(passLastUpdated).getTime()
+
+      // Truncate to seconds matching HTTP header specs
+      if (Math.floor(dbDate / 1000) <= Math.floor(deviceDate / 1000)) {
+        return new NextResponse(null, { status: 304 })
+      }
+    }
+
+    // 3. Fetch fresh pass payload from 'api/wallet/apple'
+    const passResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}&lastUpdated=${encodeURIComponent(passLastUpdated)}`,
+      { cache: 'no-store' }
+    )
+
+    if (!passResponse.ok) {
+      return new NextResponse(null, { status: 500 })
+    }
+
+    const passArrayBuffer = await passResponse.arrayBuffer()
+
+    // 4. Return the pass with the payload and appropriate headers
+    console.log(`Returning Apple Wallet pass for customer ${serialNumber}, last updated: ${passLastUpdated}`)
+    return new NextResponse(new Uint8Array(passArrayBuffer), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/vnd.apple.pkpass',
+        'last-modified': new Date(passLastUpdated).toUTCString(),
+      },
+    })
   }
-
-  // 3. Fetch fresh pass payload from 'api/wallet/apple'
-  const passResponse = await fetch(
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/apple?businessId=${customer.business_id}&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}&phoneNumber=${customer.phone_number}&currentStamps=${currentStamps}&lastUpdated=${encodeURIComponent(passLastUpdated)}`,
-    { cache: 'no-store' }
-  )
-
-  if (!passResponse.ok) {
-    return new NextResponse(null, { status: 500 })
-  }
-
-  const passArrayBuffer = await passResponse.arrayBuffer()
-
-  // 4. Return the pass with the payload and appropriate headers
-  console.log(`Returning Apple Wallet pass for customer ${serialNumber}, last updated: ${passLastUpdated}`)
-  return new NextResponse(new Uint8Array(passArrayBuffer), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/vnd.apple.pkpass',
-      'last-modified': new Date(passLastUpdated).toUTCString(),
-    },
-  })
-}
 
   return new NextResponse(null, { status: 404 })
 }
