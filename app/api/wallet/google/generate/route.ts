@@ -1,10 +1,8 @@
-// app/api/wallet/generate/route.ts
+// app/api/wallet/google/generate/route.ts
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import jwt from 'jsonwebtoken'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 // Helper to correctly parse multi-line PEM keys from environment variables
 const parseEnv = (val?: string) => {
@@ -38,7 +36,7 @@ export async function POST(request: Request) {
       .select(`
         store_name,
         business_customizations (logo_url, primary_color, wallet_hero_image_url),
-        loyalty_rules (program_name, stamp_threshold)
+        loyalty_rules (program_name, stamp_threshold, reward_description)
       `)
       .eq('id', businessId)
       .single()
@@ -80,9 +78,6 @@ export async function POST(request: Request) {
       hexBackgroundColor: custom?.primary_color || '#2563EB',
       heroImage: custom?.wallet_hero_image_url ? {
         sourceUri: { uri: custom.wallet_hero_image_url }
-<<<<<<< Updated upstream
-      } : undefined
-=======
       } : undefined,
       textModulesData: [
         {
@@ -94,10 +89,7 @@ export async function POST(request: Request) {
           body: rules?.reward_description
         }
       ]
->>>>>>> Stashed changes
     }
-
-    console.log(loyaltyClass)
 
     // 5. Define Loyalty Object (Customer Pass)
     const loyaltyObject = {
@@ -107,7 +99,7 @@ export async function POST(request: Request) {
       accountId: customerId,
       accountName: customerName,
       loyaltyPoints: {
-        balance: { string: `${currentStamps} of ${threshold}` },
+        balance: { string: `${currentStamps}` },
         label: 'STAMPS'
       },
       barcode: {
@@ -122,8 +114,6 @@ export async function POST(request: Request) {
         }
       }
     }
-
-    console.log(loyaltyObject)
 
     // 6. Generate the JWT Save Link
     const claims = {

@@ -1,4 +1,5 @@
 // utils/applePush.ts
+// Pushes requests to Apple Wallet to send a push notification to the device with the given push token.
 import jwt from 'jsonwebtoken';
 import http2 from 'http2';
 
