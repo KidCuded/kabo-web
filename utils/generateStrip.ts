@@ -86,12 +86,11 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)
 
     const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
-    console.log(siteBase)
     if (siteBase) {
       const url = `${siteBase}/icons/${iconKey}.svg`
-      console.warn(`generateStrip: icon SVG not found for key="${iconKey}" at ${url}`)
       console.log(url)
       try {
+        console.log("Loading Image....")
         const img = await loadImage(url)
         console.log("Image loaded: "+img)
 
