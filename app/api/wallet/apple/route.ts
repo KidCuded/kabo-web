@@ -143,8 +143,6 @@ export async function GET(request: Request) {
     }
 
     // This checks for the raw uploaded hero image.
-    // Later, when you build the dynamic generation route, we will swap this URL 
-    // for something like: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/dynamic-strip?businessId=${businessId}&stamps=${currentStamps}`
     try {
       const dynamicStripBuffer = await generateStripBuffer(businessId, currentStamps)
       pass.addBuffer('strip.png', dynamicStripBuffer)
