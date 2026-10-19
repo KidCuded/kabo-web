@@ -150,7 +150,7 @@ export default function CustomersPage() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">Loading customers...</td>
+                  <td colSpan={5} className="p-8 text-center text-gray-500 animate-pulse">Loading customers...</td>
                 </tr>
               ) : filteredAndSortedCustomers.length === 0 ? (
                 <tr>

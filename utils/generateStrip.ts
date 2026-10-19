@@ -66,7 +66,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
   const slotRadius = threshold > 8 ? 45 : 55
   
   const gapX = width / (cols + 1)
-  const gapY = height / (rows + 1)
+  const gapY = height / (rows + 0.5)
 
   // Pre-load custom stamp image if needed (external custom URL)
   let customStampImg: any = null
