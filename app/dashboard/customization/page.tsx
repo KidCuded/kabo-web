@@ -599,13 +599,24 @@ export default function CustomizationPage() {
                           <div className="absolute inset-0 flex items-center justify-center gap-2 px-3">
                             {[1, 2, 3, 4, 5].map((idx) => {
                               const isFilled = idx <= 3
-                              const slotStyle = !isFilled 
-                                ? emptySlotStyle === 'light' ? 'border-2 border-white/60' 
-                                : emptySlotStyle === 'dark' ? 'border-2 border-black/30 bg-black/10' 
-                                : 'bg-white/40 border-none' 
-                                : ''
+
+                              // compute the slot background/style regardless of filled state
+                              const baseSlotStyle =
+                                emptySlotStyle === 'light'
+                                  ? 'border-2 border-white/60'
+                                  : emptySlotStyle === 'dark'
+                                  ? 'border-2 border-black/30 bg-black/10'
+                                  : 'bg-white/40 border-none'
+
+                              // optional additional classes when filled (e.g. keep same background but no extra border changes)
+                              const filledExtra = isFilled ? '' : ''
+
                               return (
-                                <div key={idx} className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center relative ${slotStyle}`}>
+                                <div
+                                  key={idx}
+                                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center relative ${baseSlotStyle} ${filledExtra}`}
+                                >
+                                  {/* stamp icon sits on top of the slot background */}
                                   {isFilled && (
                                     stampType === 'custom' && stampCustomUrl ? (
                                       <img src={stampCustomUrl} alt="Stamp" className="w-7 h-7 object-contain drop-shadow-md" />
@@ -619,9 +630,9 @@ export default function CustomizationPage() {
                           </div>
                         </div>
                         
-                        <div className="flex-1 w-full px-6 py-5 text-center">
-                          <p className="text-xs font-semibold uppercase tracking-widest opacity-80 mb-1" style={{ color: secondaryColor }}>Progress</p>
-                          <p className="text-2xl font-bold tracking-tight" style={{ color: secondaryColor }}>3 / 5 Stamps</p>
+                        <div className="flex-1 w-full px-6 py-5">
+                          <p className="text-xs font-semibold uppercase tracking-widest opacity-80 mb-1" style={{ color: secondaryColor }}>Stamps collected</p>
+                          <p className="text-2xl font-bold tracking-tight" style={{ color: secondaryColor }}>3 of 5</p>
                         </div>
 
                         {/* QR Code */}

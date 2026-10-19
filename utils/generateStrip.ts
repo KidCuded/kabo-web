@@ -21,7 +21,6 @@ const ICON_KEY_MAP: Record<string, string> = {
 }
 
 export async function generateStripBuffer(businessId: string, currentStamps: number): Promise<Buffer> {
-  console.log("Generating strip buffer.....")
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
   // 1. Fetch Brand Kit and Loyalty Rules
@@ -64,7 +63,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
   // 4. Grid Math
   const cols = threshold <= 6 ? threshold : Math.ceil(threshold / 2)
   const rows = threshold <= 6 ? 1 : 2
-  const slotRadius = threshold > 8 ? 35 : 45
+  const slotRadius = threshold > 8 ? 45 : 55
   
   const gapX = width / (cols + 1)
   const gapY = height / (rows + 1)
@@ -88,22 +87,8 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
     if (siteBase) {
       const url = `${siteBase}/icons/${iconKey}.svg`
-      console.log(url)
       try {
-        console.log("Loading Image....")
         const img = await loadImage(url)
-        console.log("Image loaded: "+img)
-
-        const debugCanvas = createCanvas(img.width || 100, img.height || 100)
-        const ctx = debugCanvas.getContext('2d')
-
-        // Draw the loaded image onto the temporary canvas
-        ctx.drawImage(img, 0, 0)
-
-        // Option A: Output Base64 Data URL (Copy-paste this string directly into your browser address bar)
-        const dataUrl = debugCanvas.toDataURL('image/png')
-        console.log('[DEBUG] Image Data URL (Paste in browser):')
-        console.log(dataUrl)
 
         iconCache.set(cacheKey, img)
         if (process.env.NODE_ENV !== 'production') console.info(`generateStrip: loaded icon from site URL: ${url}`)
