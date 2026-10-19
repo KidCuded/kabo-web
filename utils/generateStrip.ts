@@ -96,8 +96,22 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
     if (siteBase) {
       const url = `${siteBase}/icons/${iconKey}.svg`
+      console.warn(`generateStrip: icon SVG not found for key="${iconKey}" at ${url}`)
+      console.log(url)
       try {
         const img = await loadImage(url)
+
+        const debugCanvas = createCanvas(img.width || 100, img.height || 100)
+        const ctx = debugCanvas.getContext('2d')
+
+        // Draw the loaded image onto the temporary canvas
+        ctx.drawImage(img, 0, 0)
+
+        // Option A: Output Base64 Data URL (Copy-paste this string directly into your browser address bar)
+        const dataUrl = debugCanvas.toDataURL('image/png')
+        console.log('[DEBUG] Image Data URL (Paste in browser):')
+        console.log(dataUrl)
+
         iconCache.set(cacheKey, img)
         if (process.env.NODE_ENV !== 'production') console.info(`generateStrip: loaded icon from site URL: ${url}`)
         return img
