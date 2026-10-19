@@ -55,6 +55,12 @@ export default function CustomerCheckPage() {
   const [feedbackStep, setFeedbackStep] = useState<'IDLE' | 'ASK_TEXT' | 'SHOW_GOOGLE' | 'SUBMITTED'>('IDLE')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // device / wallet state
+  const [deviceOS, setDeviceOS] = useState<'ios' | 'android' | 'other'>('other')
+  const [isGeneratingApple, setIsGeneratingApple] = useState(false)
+  const [isLoadingWallet, setIsLoadingWallet] = useState(false)
+  const [googleWalletUrl, setGoogleWalletUrl] = useState<string | null>(null)
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -125,6 +131,12 @@ export default function CustomerCheckPage() {
     }
     
     fetchStoreDetails()
+
+    // detect OS
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : ''
+    if (/iphone|ipad|ipod/.test(ua)) setDeviceOS('ios')
+    else if (/android/.test(ua)) setDeviceOS('android')
+    else setDeviceOS('other')
   }, [businessId])
 
   const handleCheckStamps = async (e: React.FormEvent) => {
@@ -167,6 +179,66 @@ export default function CustomerCheckPage() {
     setPhoneNumber('')
     setCustomer(null)
   }
+
+  // Open Apple Wallet pass route (redirect)
+  const handleAppleWalletFromLookup = () => {
+    if (!customer) return
+    setIsGeneratingApple(true)
+
+    try {
+      const params = new URLSearchParams({
+        businessId: businessId,
+        customerId: customer.id, // ensure this exists
+        customerName: customer.name || '',
+        phoneNumber: phoneNumber || '',
+        currentStamps: String(customer.stamps ?? 0)
+      })
+
+      // redirect to the server endpoint that returns the .pkpass
+      window.location.href = `/api/wallet/apple/generate?${params.toString()}`
+
+      // safety-reset UI state after a short delay
+      setTimeout(() => setIsGeneratingApple(false), 2000)
+    } catch (error) {
+      console.error('Apple Pass failed:', error)
+      alert('Failed to download Apple Wallet pass. Please try again.')
+      setIsGeneratingApple(false)
+    }
+  }
+
+  // Generate Google Wallet saveUrl and open it in a new tab
+  const handleGenerateGoogleWalletFromLookup = async () => {
+    if (!customer) return
+    setIsLoadingWallet(true)
+
+    try {
+      const res = await fetch('/api/wallet/google/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId,
+          customerName: customer.name || '',
+          phoneNumber: phoneNumber || '',
+          // add other fields your API needs (currentStamps etc.)
+        })
+      })
+      const data = await res.json()
+      if (data.saveUrl) {
+        // open in new tab so user can complete add-to-wallet flow
+        window.open(data.saveUrl, '_blank', 'noopener,noreferrer')
+        setGoogleWalletUrl(data.saveUrl)
+      } else {
+        console.error('No saveUrl returned', data)
+        alert('Failed to generate Google Wallet pass. Please try again.')
+      }
+    } catch (err) {
+      console.error('Failed to fetch wallet pass', err)
+      alert('Failed to generate Google Wallet pass. Please try again.')
+    } finally {
+      setIsLoadingWallet(false)
+    }
+  }
+
 
   const handleStarClick = (selectedRating: number) => {
     setRating(selectedRating)
@@ -329,7 +401,7 @@ export default function CustomerCheckPage() {
                         >
                           {isStamped ? (
                             stampIconUrl ? (
-                              <img src={stampIconUrl} alt="stamp" className="w-8 h-8 object-contain" />
+                              <img src={stampIconUrl} alt="stamp" className="w-14 h-14 object-contain" />
                             ) : (
                               <SelectedStampIcon className="w-6 h-6" />
                             )
@@ -351,7 +423,44 @@ export default function CustomerCheckPage() {
                       Only {customer ? threshold - customer.stamps : ''} more stamps to unlock: <span className="font-bold">{rewardDesc}</span>
                     </div>
                   )}
-                  <button onClick={resetSearch} className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors">
+
+                  {/* add wallet buttons for found customers */}
+                  <div className="mt-4 space-y-3">
+                    {(deviceOS === 'ios' || deviceOS === 'other') && (
+                      <button
+                        style={{ backgroundColor: primaryColor, color: secondaryColor }}
+                        onClick={handleAppleWalletFromLookup}
+                        disabled={isGeneratingApple}
+                        className="w-full bg-black hover:bg-gray-900 text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        {/* Apple icon */}
+                        <svg className="w-5 h-5" viewBox="0 0 384 512" fill="currentColor" aria-hidden>
+                          <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+                        </svg>
+                        {isGeneratingApple ? 'Generating...' : 'Add to Apple Wallet'}
+                      </button>
+                    )}
+
+                    {(deviceOS === 'android' || deviceOS === 'other') && (
+                      <button
+                        style={{ backgroundColor: primaryColor, color: secondaryColor }}
+                        onClick={handleGenerateGoogleWalletFromLookup}
+                        disabled={isLoadingWallet}
+                        className="w-full bg-[#1a1c23] hover:bg-[#2c2f38] text-white font-semibold py-3 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-sm disabled:opacity-50"
+                      >
+                        {/* Google Wallet icon (simple) */}
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                          <path d="M21.1 12.4c0-.8-.1-1.5-.2-2.3H12v4.5h5.3c-.2 1.5-.9 2.7-2.1 3.5v2.8h3.3c2-1.8 3.1-4.5 3.1-7.8l.1-.7z"/>
+                          <path d="M12 21.6c2.6 0 4.7-.8 6.3-2.3l-3.3-2.8c-.9.6-2 .9-3.1.9-2.4 0-4.4-1.6-5.1-3.8H3.3v2.9c1.6 3.1 4.7 5.1 8.7 5.1z" fill="#34A853"/>
+                          <path d="M6.9 13.6c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8V7.1H3.3C2.6 8.5 2.2 10.2 2.2 12s.4 3.5 1.1 4.9l3.6-3.3z" fill="#FBBC05"/>
+                          <path d="M12 5.8c1.4 0 2.6.5 3.6 1.4l2.7-2.7C16.6 2.9 14.5 2 12 2 8 2 4.9 4.1 3.3 7.1l3.6 2.9c.7-2.2 2.7-4.2 5.1-4.2z" fill="#EA4335"/>
+                        </svg>
+                        {isLoadingWallet ? 'Generating...' : 'Add to Google Wallet'}
+                      </button>
+                    )}
+                  </div>
+
+                  <button onClick={resetSearch} className="text-sm font-semibold text-gray-500 hover:text-gray-800 transition-colors mt-4">
                     Check a different number
                   </button>
                 </div>
