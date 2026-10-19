@@ -5,6 +5,7 @@ import { generateStripBuffer } from '@/utils/generateStrip'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  console.log("Sending request to generate strip")
   try {
     const { searchParams } = new URL(request.url)
     const businessId = searchParams.get('businessId')

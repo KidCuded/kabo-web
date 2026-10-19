@@ -1,9 +1,30 @@
 // utils/generateStrip.ts
 import { createClient } from '@supabase/supabase-js'
 import { createCanvas, loadImage } from '@napi-rs/canvas'
+import fs from 'fs'
+import path from 'path'
+
+// Module-level icon directory and cache (persist across invocations in the same process)
+const ICON_DIR = path.join(process.cwd(), 'public', 'icons')
+const iconCache = new Map<string, any>()
+
+// Optional mapping from DB stamp_type values -> SVG filenames (without .svg).
+// Extend this map to match whatever values you store in the DB.
+const ICON_KEY_MAP: Record<string, string> = {
+  // common variants -> file name
+  'shopping_bag': 'bag',
+  'star': 'star',
+  'coffee': 'coffee',
+  'scissors': 'scissors',
+  'pizza': 'pizza',
+  'award': 'award',
+  'heart': 'heart'
+}
 
 export async function generateStripBuffer(businessId: string, currentStamps: number): Promise<Buffer> {
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+
+  console.log("Generating strip buffer....")
 
   // 1. Fetch Brand Kit and Loyalty Rules
   const { data: bData } = await supabase
@@ -42,26 +63,65 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     ctx.fillRect(0, 0, width, height)
   }
 
+  console.log("Background Drew....")
+
   // 4. Grid Math
   const cols = threshold <= 6 ? threshold : Math.ceil(threshold / 2)
   const rows = threshold <= 6 ? 1 : 2
-  const slotRadius = threshold > 8 ? 35 : 45
+  const slotRadius = threshold > 8 ? 45 : 55
   
   const gapX = width / (cols + 1)
   const gapY = height / (rows + 1)
 
-  // Pre-load custom stamp image if needed
+  // Pre-load custom stamp image if needed (external custom URL)
   let customStampImg: any = null
   if (custom?.stamp_type === 'custom' && custom?.stamp_custom_url) {
     try {
       customStampImg = await loadImage(custom.stamp_custom_url)
-    } catch (e) { console.error("Failed to load custom stamp") }
+    } catch (e) { console.error("Failed to load custom stamp", e) }
+  }
+
+  /**
+   * Load an SVG icon file from public/icons/<iconKey>.svg, optionally inject color.
+   * Returns an image that @napi-rs/canvas loadImage can draw or null if it doesn't exist.
+   */
+  async function loadPresetIconImage(iconKey: string, size: number, color: string) {
+    const cacheKey = `${iconKey}::${size}::${color}`
+    if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)
+
+    const svgPath = path.join(ICON_DIR, `${iconKey}.svg`)
+    console.log(svgPath)
+    if (!fs.existsSync(svgPath)) {
+      console.warn(`generateStrip: icon SVG not found for key="${iconKey}" at ${svgPath}`)
+      iconCache.set(cacheKey, null)
+      return null
+    }
+
+    try {
+      let svg = fs.readFileSync(svgPath, 'utf8')
+
+      // Replace occurrences of "currentColor" with the requested color so stroke/fill pick it up
+      if (color) {
+        svg = svg.replace(/currentColor/g, color)
+      }
+
+      const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+      const img = await loadImage(dataUrl)
+      iconCache.set(cacheKey, img)
+      return img
+    } catch (err) {
+      console.error('Failed to load preset icon SVG for', iconKey, err)
+      iconCache.set(cacheKey, null)
+      return null
+    }
   }
 
   // 5. Draw Slots and Stamps
   let stampCount = 0
+  console.log(stampCount) 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
+      console.log(stampCount + " >= " + threshold + " ?") 
       if (stampCount >= threshold) break
 
       const x = gapX * (c + 1)
@@ -88,10 +148,47 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
       }
 
       // Draw Earned Stamp
+      console.log("not Drawing Earned Stamps") 
       if (stampCount < currentStamps) {
+        console.log("Drawing Earned Stamps") 
         if (customStampImg) {
           const imgSize = slotRadius * 1.5
           ctx.drawImage(customStampImg, x - (imgSize/2), y - (imgSize/2), imgSize, imgSize)
+        } else if (custom?.stamp_type && custom.stamp_type !== 'custom') {
+          // Resolve DB value to icon file key via ICON_KEY_MAP (fallback to the raw value)
+          const rawKey = String(custom.stamp_type)
+          const resolvedKey = ICON_KEY_MAP[rawKey] ?? rawKey
+          const iconSize = Math.round(slotRadius * 1.4)
+          const color = custom?.secondary_color || '#ffffff'
+
+          // Debug logging to help you see what's being used
+          if (process.env.NODE_ENV !== 'production') {
+            console.info(`generateStrip: requested stamp_type="${rawKey}" resolved->"${resolvedKey}" svgExists=${fs.existsSync(path.join(ICON_DIR, `${resolvedKey}.svg`))}`)
+          }
+
+          ctx.shadowColor = 'rgba(0,0,0,0.3)'
+          ctx.shadowBlur = 10
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            console.log("Loading Icon Image with: " + resolvedKey + " Icon Size: " + iconSize + " with Color: " + color)
+            const iconImg = await loadPresetIconImage(resolvedKey, iconSize, color)
+
+            console.log(iconImg) //------
+
+            if (iconImg) {
+              ctx.drawImage(iconImg, x - (iconSize/2), y - (iconSize/2), iconSize, iconSize)
+            } else {
+              // Fallback Default Star Drawing
+              ctx.fillStyle = color
+              drawStar(ctx, x, y, 5, slotRadius * 0.7, slotRadius * 0.35)
+            }
+          } catch (err) {
+            console.error('Error rendering preset icon, falling back to star', err)
+            ctx.fillStyle = custom?.secondary_color || '#ffffff'
+            drawStar(ctx, x, y, 5, slotRadius * 0.7, slotRadius * 0.35)
+          } finally {
+            ctx.shadowBlur = 0 // reset
+          }
         } else {
           // Fallback Default Star Drawing
           ctx.fillStyle = custom?.secondary_color || '#ffffff'

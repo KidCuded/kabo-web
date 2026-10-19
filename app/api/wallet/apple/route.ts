@@ -34,6 +34,8 @@ const hexToRgb = (hex: string) => {
 }
 
 export async function GET(request: Request) {
+  console.log('GET Handler Triggered at:', new Date().toISOString())
+  console.log("Creating Apple Pass....")
   try {
     const { searchParams } = new URL(request.url)
     const businessId = searchParams.get('businessId')
@@ -142,10 +144,11 @@ export async function GET(request: Request) {
       pass.addBuffer('icon@2x.png', logoBuffer)
     }
 
+    console.log("Calling to generate strip....")
+
     // This checks for the raw uploaded hero image.
-    // Later, when you build the dynamic generation route, we will swap this URL 
-    // for something like: `${process.env.NEXT_PUBLIC_SITE_URL}/api/wallet/dynamic-strip?businessId=${businessId}&stamps=${currentStamps}`
     try {
+      console.log("Calling to generate strip....")
       const dynamicStripBuffer = await generateStripBuffer(businessId, currentStamps)
       pass.addBuffer('strip.png', dynamicStripBuffer)
       pass.addBuffer('strip@2x.png', dynamicStripBuffer)

@@ -80,7 +80,21 @@ export async function POST(request: Request) {
       hexBackgroundColor: custom?.primary_color || '#2563EB',
       heroImage: custom?.wallet_hero_image_url ? {
         sourceUri: { uri: custom.wallet_hero_image_url }
+<<<<<<< Updated upstream
       } : undefined
+=======
+      } : undefined,
+      textModulesData: [
+        {
+          header: "Reward Goal",
+          body: `Collect ${threshold} stamps to earn your reward!`
+        },
+        {
+          header: "Reward Description",
+          body: rules?.reward_description
+        }
+      ]
+>>>>>>> Stashed changes
     }
 
     console.log(loyaltyClass)
