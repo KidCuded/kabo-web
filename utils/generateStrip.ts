@@ -21,6 +21,7 @@ const ICON_KEY_MAP: Record<string, string> = {
 }
 
 export async function generateStripBuffer(businessId: string, currentStamps: number): Promise<Buffer> {
+  console.log("Generating strip buffer.....")
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
   // 1. Fetch Brand Kit and Loyalty Rules
@@ -81,6 +82,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
    * Returns an image that @napi-rs/canvas loadImage can draw or null if it doesn't exist.
    */
   async function loadPresetIconImage(iconKey: string, size: number, color: string) {
+    console.log("Loading Icon Image with key: "+iconKey+", size: "+size+", color: "+color)
     const cacheKey = `${iconKey}::${size}::${color}`
     if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)
 
