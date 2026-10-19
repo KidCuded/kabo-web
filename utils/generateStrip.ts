@@ -28,7 +28,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
   const { data: bData } = await supabase
     .from('businesses')
     .select(`
-      business_customizations ( bg_type, bg_color, wallet_hero_image_url, empty_slot_style, stamp_type, stamp_custom_url, secondary_color ),
+      business_customizations ( bg_type, bg_color, wallet_hero_image_url, empty_slot_style, stamp_type, stamp_preset, stamp_custom_url, secondary_color ),
       loyalty_rules ( stamp_threshold )
     `)
     .eq('id', businessId)
@@ -146,17 +146,16 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
         if (customStampImg) {
           const imgSize = slotRadius * 1.5
           ctx.drawImage(customStampImg, x - (imgSize/2), y - (imgSize/2), imgSize, imgSize)
-        } else if (custom?.stamp_type && custom.stamp_type !== 'custom') {
+        } else if (custom?.stamp_preset && custom.stamp_type !== 'custom') {
           // Resolve DB value to icon file key via ICON_KEY_MAP (fallback to the raw value)
-          const rawKey = String(custom.stamp_type)
+          const rawKey = String(custom.stamp_preset)
           const resolvedKey = ICON_KEY_MAP[rawKey] ?? rawKey
-          console.log("rawKey -> "+resolvedKey + " resolvedKey ->"+resolvedKey)
           const iconSize = Math.round(slotRadius * 1.4)
           const color = custom?.secondary_color || '#ffffff'
 
           // Debug logging to help you see what's being used
           if (process.env.NODE_ENV !== 'production') {
-            console.info(`generateStrip: requested stamp_type="${rawKey}" resolved->"${resolvedKey}" svgExists=${fs.existsSync(path.join(ICON_DIR, `${resolvedKey}.svg`))}`)
+            console.info(`generateStrip: requested stamp_preset="${rawKey}" resolved->"${resolvedKey}" svgExists=${fs.existsSync(path.join(ICON_DIR, `${resolvedKey}.svg`))}`)
           }
 
           ctx.shadowColor = 'rgba(0,0,0,0.3)'
