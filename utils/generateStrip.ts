@@ -82,24 +82,18 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
    * Returns an image that @napi-rs/canvas loadImage can draw or null if it doesn't exist.
    */
   async function loadPresetIconImage(iconKey: string, size: number, color: string) {
-    console.log("Loading Icon Image with key: "+iconKey+", size: "+size+", color: "+color)
     const cacheKey = `${iconKey}::${size}::${color}`
     if (iconCache.has(cacheKey)) return iconCache.get(cacheKey)
 
-    const svgPath = path.join(ICON_DIR, `${iconKey}.svg`)
-    if (!fs.existsSync(svgPath)) {
-      console.warn(`generateStrip: icon SVG not found for key="${iconKey}" at ${svgPath}`)
-      iconCache.set(cacheKey, null)
-      return null
-    }
-
     const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
+    console.log(siteBase)
     if (siteBase) {
       const url = `${siteBase}/icons/${iconKey}.svg`
       console.warn(`generateStrip: icon SVG not found for key="${iconKey}" at ${url}`)
       console.log(url)
       try {
         const img = await loadImage(url)
+        console.log("Image loaded: "+img)
 
         const debugCanvas = createCanvas(img.width || 100, img.height || 100)
         const ctx = debugCanvas.getContext('2d')
