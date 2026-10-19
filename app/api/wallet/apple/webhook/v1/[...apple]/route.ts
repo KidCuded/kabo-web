@@ -26,8 +26,6 @@ export async function POST(
   const resolvedParams = await params
   const path = resolvedParams.apple
 
-  console.log('Received PATH:', path)
-
   if (path[0] === 'devices' && path[2] === 'registrations') {
     const isAuthorized = await isValidAuth(request)
     if (!isAuthorized) {
@@ -86,7 +84,6 @@ export async function POST(
 
   if (path[0] === 'log') {
     const body = await request.json()
-    console.log('Apple Wallet Log:', body)
     return new NextResponse(null, { status: 200 })
   }
 

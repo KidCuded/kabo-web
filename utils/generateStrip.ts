@@ -93,22 +93,17 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
       return null
     }
 
-    try {
-      let svg = fs.readFileSync(svgPath, 'utf8')
-
-      // Replace occurrences of "currentColor" with the requested color so stroke/fill pick it up
-      if (color) {
-        svg = svg.replace(/currentColor/g, color)
+    const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '')
+    if (siteBase) {
+      const url = `${siteBase}/icons/${iconKey}.svg`
+      try {
+        const img = await loadImage(url)
+        iconCache.set(cacheKey, img)
+        if (process.env.NODE_ENV !== 'production') console.info(`generateStrip: loaded icon from site URL: ${url}`)
+        return img
+      } catch (err) {
+        if (process.env.NODE_ENV !== 'production') console.warn(`generateStrip: failed to load icon from site URL ${url}`, err)
       }
-
-      const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
-      const img = await loadImage(dataUrl)
-      iconCache.set(cacheKey, img)
-      return img
-    } catch (err) {
-      console.error('Failed to load preset icon SVG for', iconKey, err)
-      iconCache.set(cacheKey, null)
-      return null
     }
   }
 
