@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createCanvas, loadImage } from '@napi-rs/canvas'
 import fs from 'fs'
-import path from 'path'
+import path, { resolve } from 'path'
 
 // Module-level icon directory and cache (persist across invocations in the same process)
 const ICON_DIR = path.join(process.cwd(), 'public', 'icons')
@@ -150,6 +150,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
           // Resolve DB value to icon file key via ICON_KEY_MAP (fallback to the raw value)
           const rawKey = String(custom.stamp_type)
           const resolvedKey = ICON_KEY_MAP[rawKey] ?? rawKey
+          console.log("rawKey -> "+resolvedKey + " resolvedKey ->"+resolvedKey)
           const iconSize = Math.round(slotRadius * 1.4)
           const color = custom?.secondary_color || '#ffffff'
 
