@@ -3,39 +3,39 @@ import Link from 'next/link'
 
 export default function Footer() {
   return (
-    <footer className="border-t border-gray-900/60 py-16 bg-black/40 backdrop-blur-md">
+    <footer className="border-t border-sky-100 py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           
           {/* Column 1: Brand Info */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 via-sky-500 to-cyan-400 flex items-center justify-center shadow-md shadow-sky-500/20">
                 <span className="text-white font-black text-lg leading-none">K</span>
               </div>
-              <span className="text-xl font-black text-white tracking-tight">KABO</span>
+              <span className="text-2xl font-black text-slate-900 tracking-tight">KABO</span>
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed">
+            <p className="text-slate-600 text-sm leading-relaxed">
               The retention and reputation engine for modern brick-and-mortar stores.
             </p>
           </div>
 
           {/* Column 2: Legal*/}
           <div>
-            <h4 className="text-sm font-semibold text-white tracking-wider uppercase mb-4">Legal</h4>
+            <h4 className="text-xs font-bold text-slate-900 tracking-wider uppercase mb-4">Legal</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/marketing/terms" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/terms" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Terms &amp; Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/marketing/privacy" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/privacy" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/marketing/refund-policy" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/refund-policy" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Refund Policy
                 </Link>
               </li>
@@ -44,15 +44,15 @@ export default function Footer() {
 
           {/* Column 3: Company */}
           <div>
-            <h4 className="text-sm font-semibold text-white tracking-wider uppercase mb-4">Company</h4>
+            <h4 className="text-xs font-bold text-slate-900 tracking-wider uppercase mb-4">Company</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/marketing/about" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/about" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/marketing/contact" className="text-gray-400 hover:text-white transition-colors">
+                <Link href="/marketing/contact" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Contact Us
                 </Link>
               </li>
@@ -61,11 +61,11 @@ export default function Footer() {
 
           {/* Column 4: Quick Contact Info */}
           <div>
-            <h4 className="text-sm font-semibold text-white tracking-wider uppercase mb-4">Support</h4>
-            <p className="text-gray-400 text-sm leading-relaxed mb-2">
-              Need help? Reach out to our support team.
+            <h4 className="text-xs font-bold text-slate-900 tracking-wider uppercase mb-4">Support</h4>
+            <p className="text-slate-600 text-sm leading-relaxed mb-3">
+              Need help? Reach out to our dedicated support team.
             </p>
-            <a href="mailto:support@kabo.my" className="text-sm text-blue-400 hover:underline">
+            <a href="mailto:support@kabo.my" className="inline-flex items-center text-sm font-semibold text-sky-600 hover:text-sky-700 transition-colors">
               support@kabo.my
             </a>
           </div>
@@ -73,11 +73,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom Divider & Copyright */}
-        <div className="border-t border-gray-900/80 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
+        <div className="border-t border-slate-100 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} KABO. All rights reserved.</p>
-          {/* <p>Powered by Curlec Secure Direct Debit</p> */}
+          <p className="text-slate-400">Crafted for modern merchants in Malaysia &amp; beyond.</p>
         </div>
       </div>
     </footer>
   )
-}
+}
