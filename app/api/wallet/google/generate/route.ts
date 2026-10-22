@@ -68,28 +68,28 @@ export async function POST(request: Request) {
     const classId = `${issuerId}.${businessId}`
     const objectId = `${issuerId}.${customerId}`
 
-    // 4. Define Loyalty Class (Global Template)
-    const loyaltyClass = {
-      id: classId,
-      issuerName: businessData.store_name,
-      programName: programName, // Mapped as a strict scalar string to prevent API errors
-      programLogo: custom?.logo_url ? { sourceUri: { uri: custom.logo_url } } : undefined,
-      reviewStatus: 'UNDER_REVIEW',
-      hexBackgroundColor: custom?.primary_color || '#2563EB',
-      heroImage: custom?.wallet_hero_image_url ? {
-        sourceUri: { uri: custom.wallet_hero_image_url }
-      } : undefined,
-      textModulesData: [
-        {
-          header: "Reward Goal",
-          body: `Collect ${threshold} stamps to earn your reward!`
-        },
-        {
-          header: "Reward Description",
-          body: rules?.reward_description
-        }
-      ]
-    }
+    // 4. Define Loyalty Class (Global Template) -- now only created and updated in /customizations
+    // const loyaltyClass = {
+    //   id: classId,
+    //   issuerName: businessData.store_name,
+    //   programName: programName, // Mapped as a strict scalar string to prevent API errors
+    //   programLogo: custom?.logo_url ? { sourceUri: { uri: custom.logo_url } } : undefined,
+    //   reviewStatus: 'UNDER_REVIEW',
+    //   hexBackgroundColor: custom?.primary_color || '#2563EB',
+    //   heroImage: custom?.wallet_hero_image_url ? {
+    //     sourceUri: { uri: custom.wallet_hero_image_url }
+    //   } : undefined,
+    //   textModulesData: [
+    //     {
+    //       header: "Reward Goal",
+    //       body: `Collect ${threshold} stamps to earn your reward!`
+    //     },
+    //     {
+    //       header: "Reward Description",
+    //       body: rules?.reward_description
+    //     }
+    //   ]
+    // }
 
     // 5. Define Loyalty Object (Customer Pass)
     const loyaltyObject = {
@@ -101,6 +101,10 @@ export async function POST(request: Request) {
       loyaltyPoints: {
         balance: { string: `${currentStamps}` },
         label: 'STAMPS'
+      },
+      secondaryLoyaltyPoints: {
+        balance: { string: `${customerName}` },
+        label: 'CUSTOMER'
       },
       barcode: {
         type: 'qrCode',

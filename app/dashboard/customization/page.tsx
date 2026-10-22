@@ -500,6 +500,7 @@ export default function CustomizationPage() {
                 </div>
               </section>
 
+              {/* Save button */}
               <div className="flex justify-end pt-4">
                 <button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-xl font-bold text-lg transition-colors w-full lg:w-auto shadow-md disabled:opacity-50 active:scale-95">
                   {isSaving ? 'Saving Brand Kit...' : 'Save & Publish'}
@@ -551,11 +552,11 @@ export default function CustomizationPage() {
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((idx) => {
                               const isEarned = idx <= 3
                               return (
-                                <div key={idx} className={`w-10 h-10 rounded-full flex items-center transition-all ${isEarned ? 'shadow-md' : 'bg-gray-100 border-2 border-dashed border-gray-300'}`} style={isEarned ? { backgroundColor: primaryColor, color: secondaryColor } : {}}>
+                                <div key={idx} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isEarned ? 'shadow-md' : 'bg-gray-100 border-2 border-dashed border-gray-300'}`} style={isEarned ? { backgroundColor: primaryColor, color: secondaryColor } : {}}>
                                   {stampType === 'custom' && stampCustomUrl ? (
                                     <img src={stampCustomUrl} alt="stamp" className={`w-full h-full ${!isEarned ? 'opacity-0' : ''}`} />
                                   ) : (
-                                    isEarned && <PreviewStampIcon className="w-full h-full stroke-[2.5]" />
+                                    isEarned && <PreviewStampIcon className="w-6 h-6 stroke-[2.5]"/>
                                   )}
                                 </div>
                               )
@@ -642,7 +643,7 @@ export default function CustomizationPage() {
                                     stampType === 'custom' && stampCustomUrl ? (
                                       <img src={stampCustomUrl} alt="Stamp" className="w-full h-full object-contain drop-shadow-md" />
                                     ) : (
-                                      <PreviewStampIcon className="w-full h-full text-white drop-shadow-md" />
+                                      <PreviewStampIcon className="w-6 h-6 text-white drop-shadow-md" />
                                     )
                                   )}
                                 </div>

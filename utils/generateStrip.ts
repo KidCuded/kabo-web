@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createCanvas, loadImage } from '@napi-rs/canvas'
 import fs from 'fs'
-import path, { resolve } from 'path'
+import path from 'path'
 
 // Module-level icon directory and cache (persist across invocations in the same process)
 const ICON_DIR = path.join(process.cwd(), 'public', 'icons')
@@ -27,7 +27,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
   const { data: bData } = await supabase
     .from('businesses')
     .select(`
-      business_customizations ( bg_type, bg_color, wallet_hero_image_url, empty_slot_style, stamp_type, stamp_preset, stamp_custom_url, secondary_color ),
+      business_customizations ( bg_type, bg_pattern, bg_color, wallet_hero_image_url, empty_slot_style, stamp_type, stamp_preset, stamp_custom_url, secondary_color ),
       loyalty_rules ( stamp_threshold )
     `)
     .eq('id', businessId)
@@ -60,13 +60,65 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     ctx.fillRect(0, 0, width, height)
   }
 
-  // 4. Grid Math
+  // 4. Draw CSS Patterns
+  if (custom?.bg_type === 'pattern' && custom?.bg_pattern) {
+    if (custom.bg_pattern === 'dots') {
+      // Replicates: radial-gradient(rgba(0,0,0,0.1) 2px, transparent 2px) size: 16px
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'
+      for (let x = 0; x < width; x += 16) {
+        for (let y = 0; y < height; y += 16) {
+          ctx.beginPath()
+          // x + 8 and y + 8 centers the 2px dot in the 16x16 grid cell
+          ctx.arc(x + 8, y + 8, 2, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+    } 
+    else if (custom.bg_pattern === 'grid') {
+      // Replicates: 1px grid lines every 24px
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      // Draw vertical lines
+      for (let x = 0; x < width; x += 24) {
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, height)
+      }
+      // Draw horizontal lines
+      for (let y = 0; y < height; y += 24) {
+        ctx.moveTo(0, y)
+        ctx.lineTo(width, y)
+      }
+      ctx.stroke()
+    } 
+    else if (custom.bg_pattern === 'diagonal') {
+      // Replicates: 45deg repeating stripes, 10px transparent, 10px color
+      ctx.save() // Save context state before rotating
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)'
+      
+      // Rotate canvas 45 degrees
+      ctx.rotate((45 * Math.PI) / 180)
+      
+      // Calculate diagonal length to ensure stripes cover the whole rotated canvas
+      const diag = Math.sqrt(width * width + height * height)
+      
+      // Draw 10px wide rectangles every 20px
+      for (let i = -diag; i < diag * 2; i += 20) {
+        ctx.fillRect(i, -diag, 10, diag * 2)
+      }
+      ctx.restore() // Restore context so the stamps draw normally!
+    }
+  }
+
+
+  // 5. Grid Math
   const cols = threshold <= 6 ? threshold : Math.ceil(threshold / 2)
   const rows = threshold <= 6 ? 1 : 2
-  const slotRadius = threshold > 8 ? 45 : 55
+  const slotRadius = threshold > 8 ? 40 : 50
   
+  // -- Hero Image gap between stamp icons
   const gapX = width / (cols + 1)
-  const gapY = height / (rows + 0.5)
+  const gapY = height / (rows + 1)
 
   // Pre-load custom stamp image if needed (external custom URL)
   let customStampImg: any = null
@@ -99,7 +151,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     }
   }
 
-  // 5. Draw Slots and Stamps
+  // 6. Draw Slots and Stamps
   let stampCount = 0
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -131,7 +183,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
       // Draw Earned Stamp
       if (stampCount < currentStamps) {
         if (customStampImg) {
-          const imgSize = slotRadius * 1.5
+          const imgSize = slotRadius * 1.7
           ctx.drawImage(customStampImg, x - (imgSize/2), y - (imgSize/2), imgSize, imgSize)
         } else if (custom?.stamp_preset && custom.stamp_type !== 'custom') {
           // Resolve DB value to icon file key via ICON_KEY_MAP (fallback to the raw value)
