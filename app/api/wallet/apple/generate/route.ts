@@ -100,6 +100,7 @@ export async function GET(request: Request) {
           
           backgroundColor: hexToRgb(custom.primary_color),
           foregroundColor: hexToRgb(custom.secondary_color),
+          labelColor: hexToRgb(custom.secondary_color),
           
           storeCard: {
             secondaryFields: [
