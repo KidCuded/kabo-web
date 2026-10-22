@@ -386,13 +386,8 @@ export default function CustomizationPage() {
                 <div className="flex gap-3 mb-5 p-1 bg-gray-100 rounded-lg w-fit">
                   {['color', 'pattern', 'image'].map((type) => (
                     <button 
-                      key={type} type="button" onClick={() => {
-                        setBgType(type as any)
-                        if (bgType === 'image' && type !== 'image') {
-                          deleteImageFromBucket(portalBgUrl); setPortalBgUrl(null)
-                          deleteImageFromBucket(walletHeroUrl); setWalletHeroUrl(null)
-                        }
-                      }}
+                      key={type} type="button" 
+                      onClick={() => setBgType(type as any)}
                       className={`px-5 py-2 text-sm font-bold rounded-md capitalize transition-colors ${bgType === type ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-900'}`}
                     >
                       {type}

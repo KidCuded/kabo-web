@@ -60,7 +60,7 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     ctx.fillRect(0, 0, width, height)
   }
 
-  // 4. Draw CSS Patterns
+  // 4. Draw Background Patterns
   if (custom?.bg_type === 'pattern' && custom?.bg_pattern) {
     if (custom.bg_pattern === 'dots') {
       // Replicates: radial-gradient(rgba(0,0,0,0.1) 2px, transparent 2px) size: 16px
@@ -80,12 +80,12 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
       ctx.lineWidth = 1
       ctx.beginPath()
       // Draw vertical lines
-      for (let x = 0; x < width; x += 24) {
+      for (let x = 0; x < width; x += 36) {
         ctx.moveTo(x, 0)
         ctx.lineTo(x, height)
       }
       // Draw horizontal lines
-      for (let y = 0; y < height; y += 24) {
+      for (let y = 0; y < height; y += 36) {
         ctx.moveTo(0, y)
         ctx.lineTo(width, y)
       }
@@ -96,15 +96,15 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
       ctx.save() // Save context state before rotating
       ctx.fillStyle = 'rgba(0, 0, 0, 0.03)'
       
-      // Rotate canvas 45 degrees
-      ctx.rotate((45 * Math.PI) / 180)
+      // Rotate canvas -45 degrees
+      ctx.rotate((-45 * Math.PI) / 180)
       
       // Calculate diagonal length to ensure stripes cover the whole rotated canvas
       const diag = Math.sqrt(width * width + height * height)
       
       // Draw 10px wide rectangles every 20px
       for (let i = -diag; i < diag * 2; i += 20) {
-        ctx.fillRect(i, -diag, 10, diag * 2)
+        ctx.fillRect(i, -diag, 20, diag * 2)
       }
       ctx.restore() // Restore context so the stamps draw normally!
     }
@@ -140,16 +140,35 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
     if (siteBase) {
       const url = `${siteBase}/icons/${iconKey}.svg`
       try {
-        const img = await loadImage(url)
+        const response = await fetch(url)
+        let svgText = await response.text()
+
+        // Double the resolution for Apple Retina displays
+        const targetResolution = size * 2 
+        
+        svgText = svgText
+          // 1. Remove the hardcoded low-res dimensions
+          .replace(/width="[^"]*"/, '')
+          .replace(/height="[^"]*"/, '')
+          // 2. Overwrite the CSS 'currentColor' placeholder with your dynamic hex/rgba string
+          .replace(/currentColor/g, color)
+          // 3. Re-inject the new high-res dimensions into the opening <svg> tag
+          .replace(/<svg([^>]*)>/, (match, attributes) => {
+            return `<svg width="${targetResolution}" height="${targetResolution}" ${attributes}>`
+          })
+
+        // Convert the dynamically modified raw string into a Canvas image buffer
+        const img = await loadImage(Buffer.from(svgText))
 
         iconCache.set(cacheKey, img)
-        if (process.env.NODE_ENV !== 'production') console.info(`generateStrip: loaded icon from site URL: ${url}`)
+        if (process.env.NODE_ENV !== 'production') console.info(`generateStrip: loaded sharp, colored icon: ${url}`)
         return img
       } catch (err) {
-        if (process.env.NODE_ENV !== 'production') console.warn(`generateStrip: failed to load icon from site URL ${url}`, err)
+        if (process.env.NODE_ENV !== 'production') console.warn(`generateStrip: failed to load icon`, err)
       }
     }
   }
+  
 
   // 6. Draw Slots and Stamps
   let stampCount = 0
@@ -158,7 +177,14 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
       if (stampCount >= threshold) break
 
       const x = gapX * (c + 1)
-      const y = gapY * (r + 1)
+      let y = gapY * (r + 1)
+
+      // Add extra spacing if there are 2 rows
+      if (rows === 2) {
+        const spreadOffset = 14; // Increase this number to push rows further apart
+        // If row 0, move it up (-). If row 1, move it down (+)
+        y += (r === 0) ? -spreadOffset : spreadOffset;
+      }
 
       // Draw Empty Slot
       ctx.beginPath()
