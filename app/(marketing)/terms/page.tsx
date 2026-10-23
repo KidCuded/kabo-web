@@ -1,4 +1,4 @@
-// app/marketing/terms/page.tsx
+// app/(marketing)/terms/page.tsx
 import Link from 'next/link'
 import Header from '@/components/header'
 import Footer from '@/components/footer'

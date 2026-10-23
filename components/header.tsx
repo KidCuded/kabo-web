@@ -37,25 +37,25 @@ export default function Header() {
 
         <nav className="flex items-center gap-4 sm:gap-6">
           <Link
-            href="/marketing/about"
+            href="/about"
             className="text-sm font-semibold text-slate-600 hover:text-sky-600 transition-colors hidden sm:inline-block cursor-pointer"
           >
             About
           </Link>
           <Link
-            href="/marketing/contact"
+            href="/contact"
             className="text-sm font-semibold text-slate-600 hover:text-sky-600 transition-colors hidden sm:inline-block cursor-pointer"
           >
             Contact
           </Link>
           <Link
-            href="/auth/login"
+            href="/login"
             className="text-sm font-semibold text-slate-600 hover:text-sky-600 transition-colors cursor-pointer"
           >
             Log in
           </Link>
           <Link
-            href="/auth/register"
+            href="/register"
             className="text-sm font-bold bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 text-white px-5 py-2.5 rounded-xl hover:from-sky-400 hover:to-blue-500 shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/35 transition-all duration-200 cursor-pointer"
           >
             Get Started

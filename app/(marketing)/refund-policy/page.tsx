@@ -1,4 +1,4 @@
-// app/marketing/refund-policy/page.tsx
+// app/(marketing)/refund-policy/page.tsx
 import Link from 'next/link'
 import Header from '@/components/header'
 import Footer from '@/components/footer'

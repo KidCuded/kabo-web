@@ -68,7 +68,7 @@ export default function LandingPage() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto sm:max-w-none">
               <Link
-                href="/auth/register"
+                href="/register"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 text-base font-bold bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 text-white px-8 py-4 rounded-xl hover:from-sky-400 hover:to-blue-500 transition-all duration-200 shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/40 hover:-translate-y-0.5 cursor-pointer"
               >
                 <span>Upgrade Your Store</span>
@@ -265,7 +265,7 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link
-                  href="/auth/register"
+                  href="/register"
                   className="block w-full text-center font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 px-6 py-4 rounded-xl transition-colors cursor-pointer"
                 >
                   Start 14-Day Trial
@@ -316,7 +316,7 @@ export default function LandingPage() {
                   </ul>
                 </div>
                 <Link
-                  href="/auth/register"
+                  href="/register"
                   className="block w-full text-center font-bold bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 text-white px-6 py-4 rounded-xl hover:from-sky-400 hover:to-blue-500 transition-all shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/35 cursor-pointer"
                 >
                   Upgrade to Pro
@@ -343,7 +343,7 @@ export default function LandingPage() {
                   Join modern Malaysian stores using KABO to bring customers back and gather glowing Google reviews.
                 </p>
                 <Link
-                  href="/auth/register"
+                  href="/register"
                   className="inline-flex items-center gap-2 font-bold bg-white text-slate-900 px-9 py-4 rounded-xl hover:bg-slate-50 transition-all transform hover:-translate-y-0.5 shadow-xl cursor-pointer"
                 >
                   <span>Get Started for Free</span>

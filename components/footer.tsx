@@ -25,17 +25,17 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-slate-900 tracking-wider uppercase mb-4">Legal</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/marketing/terms" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
+                <Link href="/terms" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Terms &amp; Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/marketing/privacy" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
+                <Link href="/privacy" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/marketing/refund-policy" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
+                <Link href="/refund-policy" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Refund Policy
                 </Link>
               </li>
@@ -47,12 +47,12 @@ export default function Footer() {
             <h4 className="text-xs font-bold text-slate-900 tracking-wider uppercase mb-4">Company</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/marketing/about" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
+                <Link href="/about" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/marketing/contact" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
+                <Link href="/contact" className="text-slate-600 hover:text-sky-600 transition-colors cursor-pointer">
                   Contact Us
                 </Link>
               </li>
