@@ -1,14 +1,8 @@
 // app/api/wallet/google/generate/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { parseEnv } from '@/lib/parseEnvCredentials'
 import jwt from 'jsonwebtoken'
-
-
-// Helper to correctly parse multi-line PEM keys from environment variables
-const parseEnv = (val?: string) => {
-  if (!val) return ''
-  return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
-}
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = createAdminClient()
 
     // 1. Fetch Customer Data
     const { data: customerData } = await supabase

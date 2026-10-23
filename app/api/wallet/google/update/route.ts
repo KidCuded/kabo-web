@@ -1,7 +1,7 @@
 // app/api/wallet/update/route.ts
 import { NextResponse } from 'next/server'
-import { pushGoogleWalletUpdate } from '@/features/updateGooglePass'
-import { createClient } from '@supabase/supabase-js'
+import { pushGoogleWalletUpdate } from '@/lib/wallet/updateGooglePass'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch the threshold to format the "X of Y" string
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = createAdminClient()
     const { data: rulesData } = await supabase
       .from('loyalty_rules')
       .select('stamp_threshold')

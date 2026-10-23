@@ -1,6 +1,6 @@
 // app/api/chip/cancel/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server' // Adjust if your server client path is different
+import { createClient } from '@/lib/supabase/server' // Adjust if your server client path is different
 
 export async function POST(request: Request) {
   try {

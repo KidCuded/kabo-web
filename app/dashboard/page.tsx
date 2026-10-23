@@ -3,7 +3,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Scanner } from '@yudiel/react-qr-scanner'
 
 export default function DashboardPage() {

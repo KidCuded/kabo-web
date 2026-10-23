@@ -75,11 +75,15 @@ kabo-web/
 │   └── page.tsx                  # Public marketing landing page
 ├── certificates/                 # Apple PassKit & APNs certificates (gitignored keys)
 ├── components/                   # Shared UI components (header, footer, DarkVeil, etc.)
-├── features/                     # Core domain services (applePush.ts, updateGooglePass.ts)
+├── lib/
+│   ├── supabase/                 # Supabase clients (browser, server, service-role admin)
+│   ├── wallet/                   # Apple/Google Wallet helpers (APNs push, pass updates, strip images)
+│   ├── cropImage.ts              # Client-side image cropping for uploads
+│   ├── parseEnvCredentials.ts    # Cleans PEM keys/certs read from env vars
+│   └── utils.ts                  # cn() class name helper
 ├── proxy.ts                      # Supabase SSR session validation & route protection
 ├── supabase/                     # Supabase migrations & configurations
-├── types/                        # TypeScript type definitions
-└── utils/                        # Supabase client/server helpers, strip generators, etc.
+└── types/                        # TypeScript type definitions
 ```
 
 ---

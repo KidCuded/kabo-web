@@ -1,16 +1,9 @@
 // app/api/wallet/apple/webhook/v1/[...apple]/route.ts
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
 
 async function isValidAuth(req: Request) {
   const headersList = await headers()
@@ -45,7 +38,7 @@ export async function POST(
       return new NextResponse(null, { status: 400 })
     }
 
-    const supabase = getSupabase()
+    const supabase = createAdminClient()
 
     // 1. Fetch business_id from customers table
     const { data: customer, error: customerError } = await supabase
@@ -101,7 +94,7 @@ export async function GET(
     const deviceLibraryIdentifier = path[1]
     const passTypeIdentifier = path[3]
 
-    const supabase = getSupabase()
+    const supabase = createAdminClient()
     const { data } = await supabase
       .from('apple_wallet_registrations')
       .select('serial_number, created_at')
@@ -125,7 +118,7 @@ if (path[0] === 'passes') {
   }
 
   const serialNumber = path[2] // customerId
-  const supabase = getSupabase()
+  const supabase = createAdminClient()
 
   // 1. Fetch customer details and the registration's updated_at timestamp
   const { data: customer } = await supabase
@@ -208,7 +201,7 @@ export async function DELETE(
     const deviceLibraryIdentifier = path[1]
     const serialNumber = path[4]
 
-    const supabase = getSupabase()
+    const supabase = createAdminClient()
     await supabase
       .from('apple_wallet_registrations')
       .delete()

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Star, Coffee, Scissors, Pizza, ShoppingBag, Award, Heart } from 'lucide-react'
 
 // Map string names to actual Lucide React components

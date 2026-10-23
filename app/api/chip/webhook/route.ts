@@ -1,7 +1,8 @@
 // app/api/chip/webhook/route.ts
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { parseEnv } from '@/lib/parseEnvCredentials'
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Verify the webhook payload using CHIP's Public Key
-    const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY!.replace(/\\n/g, '\n')
+    const publicKey = parseEnv(process.env.CHIP_WEBHOOK_PUBLIC_KEY)
     //const publicKey = process.env.CHIP_WEBHOOK_PUBLIC_KEY_TEST!.replace(/\\n/g, '\n')
     
     const verifier = crypto.createVerify('RSA-SHA256')
@@ -31,10 +32,7 @@ export async function POST(request: Request) {
     const eventType = JSON.stringify(event.event_type, null, 2)
 
     // 4. Initialize Supabase Admin Client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = createAdminClient()
     
     console.log('Event Type:', eventType);
 

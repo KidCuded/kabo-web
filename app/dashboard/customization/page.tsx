@@ -2,9 +2,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import Cropper from 'react-easy-crop'
-import { getCroppedImg } from '@/utils/cropImage'
+import { getCroppedImg } from '@/lib/cropImage'
 import { Star, Coffee, Scissors, Pizza, ShoppingBag, Award, Heart, Layout, Wallet } from 'lucide-react'
 
 const StampIconMap: Record<string, any> = {

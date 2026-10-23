@@ -1,14 +1,15 @@
-// utils/applePush.ts
+// lib/wallet/applePush.ts
 // Pushes requests to Apple Wallet to send a push notification to the device with the given push token.
 import jwt from 'jsonwebtoken';
 import http2 from 'http2';
+import { parseEnv } from '@/lib/parseEnvCredentials';
 
 export async function sendAppleWalletPush(pushToken: string) {
   return new Promise((resolve) => {
     try {
       const teamId = process.env.APPLE_TEAM_ID!;
       const keyId = process.env.APPLE_APNS_KEY_ID!;
-      const privateKey = process.env.APPLE_APNS_KEY!.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim();
+      const privateKey = parseEnv(process.env.APPLE_APNS_KEY);
 
       const token = jwt.sign(
         { iss: teamId, iat: Math.floor(Date.now() / 1000) },

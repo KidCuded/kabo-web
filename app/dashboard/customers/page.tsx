@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation' // Add this import
 
 type CustomerData = {

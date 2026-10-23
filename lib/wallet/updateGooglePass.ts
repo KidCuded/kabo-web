@@ -1,11 +1,6 @@
-// utils/updateGooglePass.ts
+// lib/wallet/updateGooglePass.ts
 import { GoogleAuth } from 'google-auth-library'
-
-// Helper to correctly parse multi-line PEM keys from environment variables
-const parseEnv = (val?: string) => {
-  if (!val) return ''
-  return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
-}
+import { parseEnv } from '@/lib/parseEnvCredentials'
 
 export async function pushGoogleWalletUpdate(businessId: string, customerId: string, newStamps: number, threshold: number) {
   try {

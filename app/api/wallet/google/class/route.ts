@@ -1,19 +1,15 @@
 // app/api/wallet/google/class/route.ts
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { parseEnv } from '@/lib/parseEnvCredentials'
 import { GoogleAuth } from 'google-auth-library'
-
-const parseEnv = (val?: string) => {
-  if (!val) return ''
-  return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
-}
 
 export async function POST(request: Request) {
   try {
     const { businessId } = await request.json()
     if (!businessId) return NextResponse.json({ error: 'Missing businessId' }, { status: 400 })
 
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = createAdminClient()
     
     // 1. Fetch Brand Kit and Loyalty Rules
     const { data: bData } = await supabase

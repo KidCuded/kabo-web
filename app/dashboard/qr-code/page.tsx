@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 export default function QRCodePage() {
   const [businessId, setBusinessId] = useState<string | null>(null)

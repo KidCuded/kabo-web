@@ -1,5 +1,5 @@
-// utils/generateStrip.ts
-import { createClient } from '@supabase/supabase-js'
+// lib/wallet/generateStrip.ts
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createCanvas, loadImage } from '@napi-rs/canvas'
 import fs from 'fs'
 import path from 'path'
@@ -21,7 +21,7 @@ const ICON_KEY_MAP: Record<string, string> = {
 }
 
 export async function generateStripBuffer(businessId: string, currentStamps: number): Promise<Buffer> {
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+  const supabase = createAdminClient()
 
   // 1. Fetch Brand Kit and Loyalty Rules
   const { data: bData } = await supabase

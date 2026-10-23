@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 
 export default function SubscriptionPage() {
   const [status, setStatus] = useState<string>('loading')

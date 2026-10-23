@@ -1,8 +1,9 @@
 // app/api/wallet/apple/route.ts
 import { NextResponse } from 'next/server'
 import { PKPass } from 'passkit-generator'
-import { createClient } from '@supabase/supabase-js'
-import { generateStripBuffer } from '@/utils/generateStrip'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { parseEnv } from '@/lib/parseEnvCredentials'
+import { generateStripBuffer } from '@/lib/wallet/generateStrip'
 
 export const dynamic = 'force-dynamic' 
 
@@ -11,11 +12,6 @@ async function fetchImageAsBuffer(url: string) {
   if (!response.ok) return null
   const arrayBuffer = await response.arrayBuffer()
   return Buffer.from(arrayBuffer)
-}
-
-const parseEnv = (val?: string) => {
-  if (!val) return ''
-  return val.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n').trim()
 }
 
 // Helper function to convert hex colors to Apple's required rgb string
@@ -45,7 +41,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Missing businessId' }, { status: 400 })
     }
 
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const supabase = createAdminClient()
     
     // 1. Fetch from the unified Brand Kit
     const { data: businessData } = await supabase

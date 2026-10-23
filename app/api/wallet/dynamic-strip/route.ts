@@ -1,6 +1,6 @@
 // app/api/wallet/dynamic-strip/route.ts
 import { NextResponse } from 'next/server'
-import { generateStripBuffer } from '@/utils/generateStrip'
+import { generateStripBuffer } from '@/lib/wallet/generateStrip'
 
 export const dynamic = 'force-dynamic'
 

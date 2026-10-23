@@ -1,4 +1,4 @@
-// utils/cropImage.ts
+// lib/cropImage.ts
 export const getCroppedImg = async (imageSrc: string, pixelCrop: any, pendingCropType: string): Promise<File> => {
   const image = new Image()
   image.src = imageSrc

@@ -1,7 +1,7 @@
 // app/api/wallet/apple/push/route.ts
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { sendAppleWalletPush } from '@/features/applePush';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { sendAppleWalletPush } from '@/lib/wallet/applePush';
 
 export async function POST(request: Request) {
   try {
@@ -11,10 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing customerId or businessId' }, { status: 400 });
     }
 
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY! 
-    );
+    const supabaseAdmin = createAdminClient();
 
     const now = new Date().toISOString();
 
