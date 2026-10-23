@@ -20,7 +20,7 @@ export async function register(formData: FormData) {
     options: {
       // Supabase verifies the user, generates the valid PKCE code, 
       // and appends it to this exact URL before redirecting.
-      emailRedirectTo: `${origin}/auth/callback?next=/login`,
+      emailRedirectTo: `${origin}/callback?next=/login`,
     },
   })
 
