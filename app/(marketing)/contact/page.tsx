@@ -1,4 +1,4 @@
-// app/marketing/contact/page.tsx
+// app/(marketing)/contact/page.tsx
 import Header from '@/components/header'
 import Footer from '@/components/footer'
 import { Handshake, MessageSquare, Mail, Sparkles, MapPin } from 'lucide-react'

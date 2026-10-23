@@ -1,4 +1,4 @@
-// app/marketing/about/page.tsx
+// app/(marketing)/about/page.tsx
 import Link from 'next/link'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
@@ -74,7 +74,7 @@ export default function AboutPage() {
           {/* Call to Action */}
           <div className="text-center pt-4">
             <Link 
-              href="/auth/register" 
+              href="/register" 
               className="inline-flex items-center gap-2.5 bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white px-8 py-4 rounded-xl font-bold text-base transition-all duration-200 shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/40 hover:-translate-y-0.5 cursor-pointer"
             >
               <span>Start your free trial</span>
