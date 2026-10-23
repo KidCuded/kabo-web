@@ -103,7 +103,8 @@ export async function generateStripBuffer(businessId: string, currentStamps: num
       const diag = Math.sqrt(width * width + height * height)
       
       // Draw 10px wide rectangles every 20px
-      for (let i = -diag; i < diag * 2; i += 20) {
+      for (let i = -diag; i < diag * 2; i += 40) {
+        // Changing 10 to 20 makes the line itself twice as wide
         ctx.fillRect(i, -diag, 20, diag * 2)
       }
       ctx.restore() // Restore context so the stamps draw normally!
